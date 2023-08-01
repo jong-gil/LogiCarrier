@@ -36,6 +36,10 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	compileOnly('org.springframework.boot:spring-boot-starter-batch')
 	testCompileOnly('org.springframework.batch:spring-batch-test')
+	// https://mvnrepository.com/artifact/org.springframework.kafka/spring-kafka
+	implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: '3.0.9'
+	implementation group: 'org.modelmapper', name: 'modelmapper', version: '3.1.1'
+
 }
 
 dependencyManagement {
