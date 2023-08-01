@@ -15,3 +15,8 @@ spring:
     url: jdbc:mysql://localhost:3306/delivery
     username: root
     password: root
+
+item:
+  max: 100
+  once: 10
+  maxCnt: 3
