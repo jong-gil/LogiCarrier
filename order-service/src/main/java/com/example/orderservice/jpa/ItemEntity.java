@@ -19,7 +19,7 @@ public class ItemEntity {
     private Long stockId;
     @Column(nullable = false)
     private boolean status;
-    private LocalDateTime finishedTime;
+    private String finishedTime;
     private String name;
     private String image;
     private String about;

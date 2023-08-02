@@ -4,9 +4,11 @@ import com.example.orderservice.dto.OrderDto;
 import com.example.orderservice.dto.RequestOrder;
 import com.example.orderservice.dto.ResponseOrder;
 import com.example.orderservice.jpa.ItemEntity;
+import com.example.orderservice.massagequeue.OrderProducer;
 import com.example.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.core.env.Environment;
@@ -24,6 +26,7 @@ import java.util.List;
 public class OrderController {
     private final Environment env;
     private final OrderService orderService;
+    private final OrderProducer orderProducer;
 
     @GetMapping("/health_check")
     public String status() {
@@ -45,15 +48,7 @@ public class OrderController {
             responseOrderList.add(responseOrder);
         }
 
-        /* kafka */
-//        orderDto.setOrderId(UUID.randomUUID().toString());
-//        orderDto.setTotalPrice(orderDetails.getQty() * orderDetails.getUnitPrice());
 
-        /* send this order to the kafka */
-//        kafkaProducer.send("example-catalog-topic", orderDto);
-//        orderProducer.send("orders", orderDto);
-
-//        ResponseOrder responseOrder = mapper.map(orderDto, ResponseOrder.class);
 
         log.info("After added orders data");
         return ResponseEntity.status(HttpStatus.CREATED).body(responseOrderList);

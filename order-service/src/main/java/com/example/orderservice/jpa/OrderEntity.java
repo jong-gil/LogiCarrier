@@ -22,14 +22,14 @@ public class OrderEntity {
     @Column(nullable = false)
     private Integer status;
     @Column(nullable = false)
-    private LocalDateTime createdTime;
+    private String createdTime;
     @Column(nullable = true)
-    private LocalDateTime finishedTime;
+    private String finishedTime;
     private Long userId;
 
     @Builder
     public OrderEntity(){
         this.status = 0;
-        this.createdTime = LocalDateTime.now();
+        this.createdTime = LocalDateTime.now().toString();
     }
 }
