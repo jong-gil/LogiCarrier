@@ -8,9 +8,9 @@ import java.util.List;
 @Data
 public class OrderDto {
     private long id;
-    private LocalDateTime createdTime;
-    private LocalDateTime finishedTime;
-    private String status;
+    private String createdTime;
+    private String finishedTime;
+    private Integer status;
     private Long userId;
     private List<ResponseItem> responseItemList;
 }

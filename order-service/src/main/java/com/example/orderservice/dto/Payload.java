@@ -11,8 +11,8 @@ import java.time.LocalDateTime;
 public class Payload {
     private Long id;
     private Integer status;
-    private LocalDateTime createdTime;
-    private LocalDateTime finishedTime;
+    private String createdTime;
+    private String finishedTime;
     private Long userId;
 
 }

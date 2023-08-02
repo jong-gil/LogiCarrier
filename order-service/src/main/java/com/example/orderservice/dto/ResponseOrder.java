@@ -8,6 +8,6 @@ import java.util.List;
 @Data
 public class ResponseOrder {
     private Long id;
-    private LocalDateTime createdTime;
+    private String createdTime;
     private List<ResponseItem> responseItemList;
 }

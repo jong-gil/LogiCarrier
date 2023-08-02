@@ -6,6 +6,7 @@ import com.example.orderservice.jpa.ItemEntity;
 import com.example.orderservice.jpa.ItemRepository;
 import com.example.orderservice.jpa.OrderEntity;
 import com.example.orderservice.jpa.OrderRepository;
+import com.example.orderservice.massagequeue.OrderProducer;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
@@ -22,7 +23,7 @@ public class OderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
     private final Environment env;
-
+    private final OrderProducer orderProducer;
 
     @Override
     public List<OrderDto> createOrder() {
@@ -32,9 +33,9 @@ public class OderServiceImpl implements OrderService {
         for (int i = 0; i< Integer.parseInt(env.getProperty("item.once")); i++){
             OrderEntity orderEntity = OrderEntity.builder().build();
             OrderEntity savedOrderEntity = orderRepository.save(orderEntity);
-            OrderDto orderDto = mapper.map(savedOrderEntity, OrderDto.class);
+            OrderDto orderDto = mapper.map(orderEntity, OrderDto.class);
             List<ResponseItem> responseItemList = new ArrayList<>();
-
+            orderProducer.send("orders", orderDto);
             for (int j = 0; j < (int)(Integer.parseInt(env.getProperty("item.maxCnt"))*Math.random()) + 1; j ++){
                 int randomId = (int)(Integer.parseInt(env.getProperty("item.max"))*Math.random()) + 1;
                 Long stockId = new Long(randomId);
