@@ -33,9 +33,8 @@ public class OderServiceImpl implements OrderService {
         for (int i = 0; i< Integer.parseInt(env.getProperty("item.once")); i++){
             OrderEntity orderEntity = OrderEntity.builder().build();
             OrderEntity savedOrderEntity = orderRepository.save(orderEntity);
-            OrderDto orderDto = mapper.map(orderEntity, OrderDto.class);
+            OrderDto orderDto = mapper.map(savedOrderEntity, OrderDto.class);
             List<ResponseItem> responseItemList = new ArrayList<>();
-            orderProducer.send("orders", orderDto);
             for (int j = 0; j < (int)(Integer.parseInt(env.getProperty("item.maxCnt"))*Math.random()) + 1; j ++){
                 int randomId = (int)(Integer.parseInt(env.getProperty("item.max"))*Math.random()) + 1;
                 Long stockId = new Long(randomId);
@@ -46,7 +45,6 @@ public class OderServiceImpl implements OrderService {
                 ItemEntity savedItemEntity = itemRepository.save(itemEntity);
                 ResponseItem responseItem = mapper.map(savedItemEntity, ResponseItem.class);
                 responseItemList.add(responseItem);
-
             }
             orderDto.setResponseItemList(responseItemList);
             orderDtoList.add(orderDto);

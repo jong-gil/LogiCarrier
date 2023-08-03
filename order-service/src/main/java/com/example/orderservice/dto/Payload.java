@@ -5,6 +5,7 @@ import lombok.Data;
 
 import javax.persistence.Column;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -14,5 +15,5 @@ public class Payload {
     private String createdTime;
     private String finishedTime;
     private Long userId;
-
+    private List<ResponseItem> responseItemList;
 }
