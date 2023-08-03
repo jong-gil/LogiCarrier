@@ -25,6 +25,7 @@ public class OrderProducer {
                 .status(orderDto.getStatus())
                 .finishedTime(orderDto.getFinishedTime())
                 .createdTime(orderDto.getCreatedTime())
+                .responseItemList(orderDto.getResponseItemList())
                 .build();
 
 
