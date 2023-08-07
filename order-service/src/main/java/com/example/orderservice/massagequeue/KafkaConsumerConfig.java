@@ -71,7 +71,7 @@ public class KafkaConsumerConfig {
     //요청받은 주문과 아이템 정보 orderInfo로 produce
     @KafkaListener(topics = "nextOrders", groupId = "test")
     public void nextOrders(String message) throws IOException {
-        OrderEntity orderEntity = orderRepository.findByStatusDescCreatedTime(0).orElseThrow(NoSuchElementException::new);
+        OrderEntity orderEntity = orderRepository.findByStatusOrderByCreatedTimeDesc(0).orElseThrow(NoSuchElementException::new);
         ModelMapper mapper = new ModelMapper();
         OrderDto orderDto = mapper.map(orderEntity, OrderDto.class);
         List<ItemEntity> itemEntityList= itemRepository.findAllByOrderEntity(orderEntity);

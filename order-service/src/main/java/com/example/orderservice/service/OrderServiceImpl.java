@@ -2,10 +2,7 @@ package com.example.orderservice.service;
 
 import com.example.orderservice.dto.OrderDto;
 import com.example.orderservice.dto.ResponseItem;
-import com.example.orderservice.jpa.ItemEntity;
-import com.example.orderservice.jpa.ItemRepository;
-import com.example.orderservice.jpa.OrderEntity;
-import com.example.orderservice.jpa.OrderRepository;
+import com.example.orderservice.jpa.*;
 import com.example.orderservice.massagequeue.OrderProducer;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -13,15 +10,16 @@ import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.criteria.CriteriaBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
-public class OderServiceImpl implements OrderService {
+public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
+    private final StockRepository stockRepository;
     private final Environment env;
     private final OrderProducer orderProducer;
 
@@ -35,16 +33,25 @@ public class OderServiceImpl implements OrderService {
             OrderEntity savedOrderEntity = orderRepository.save(orderEntity);
             OrderDto orderDto = mapper.map(savedOrderEntity, OrderDto.class);
             List<ResponseItem> responseItemList = new ArrayList<>();
-            for (int j = 0; j < (int)(Integer.parseInt(env.getProperty("item.maxCnt"))*Math.random()) + 1; j ++){
+            int j = 0;
+            //랜덤한 아이템수를 채울떄 까지
+            while ( j < (int)(Integer.parseInt(env.getProperty("item.maxCnt"))*Math.random()) + 1) {
                 int randomId = (int)(Integer.parseInt(env.getProperty("item.max"))*Math.random()) + 1;
                 Long stockId = new Long(randomId);
-                ItemEntity itemEntity = ItemEntity.builder()
-                        .stockId(stockId)
-                        .orderEntity(savedOrderEntity)
-                        .build();
-                ItemEntity savedItemEntity = itemRepository.save(itemEntity);
-                ResponseItem responseItem = mapper.map(savedItemEntity, ResponseItem.class);
-                responseItemList.add(responseItem);
+                StockEntity  stockEntity = stockRepository.findById(stockId).orElseThrow(NoSuchElementException::new);
+                //재고가 있다면
+                if (stockEntity.getAmount() > 0) {
+                    ItemEntity itemEntity = ItemEntity.builder()
+                            .stockId(stockId)
+                            .orderEntity(savedOrderEntity)
+                            .build();
+                    ItemEntity savedItemEntity = itemRepository.save(itemEntity);
+                    ResponseItem responseItem = mapper.map(savedItemEntity, ResponseItem.class);
+                    responseItemList.add(responseItem);
+                    stockEntity.setAmount(stockEntity.getAmount() - 1);
+                    stockRepository.save(stockEntity);
+                    j++;
+                }
             }
             orderDto.setResponseItemList(responseItemList);
             orderDtoList.add(orderDto);
