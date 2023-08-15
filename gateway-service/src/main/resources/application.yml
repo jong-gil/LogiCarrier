@@ -29,5 +29,17 @@ spring:
           uri: lb://ORDER-SERVICE
           predicates:
             - Path=/order-service/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/order-service/(?<segment>.*), /$\{segment}
+
+        - id: login-service
+          uri: lb://LOGIN-SERVICE
+          predicates:
+            - Path=/login-service/**
+            - Method=GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
 
 
