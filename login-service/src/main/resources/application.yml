@@ -1,0 +1,21 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: login-service
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/logiCarrier
+    username: root
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        show_sql: true
+
+token:
+  expiration_time: 86400000   # 하루 길이의 토큰
+  secret: user_token_for_JSON_Web_Token_and_must_be_longer_to_guarantee_security_of_the_service_CHEER_UP
