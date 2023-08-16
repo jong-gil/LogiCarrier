@@ -11,9 +11,5 @@ import java.util.List;
 @Builder
 public class Payload {
     private Long id;
-    private Integer status;
-    private String createdTime;
-    private String finishedTime;
-    private Long userId;
     private List<ResponseItem> responseItemList;
 }

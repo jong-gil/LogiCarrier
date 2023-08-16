@@ -4,7 +4,6 @@ import lombok.Data;
 
 @Data
 public class ResponseItem {
-    private Long id;
-    private String name;
-    private Long StockId;
+    private long id;
+    private int qty;
 }

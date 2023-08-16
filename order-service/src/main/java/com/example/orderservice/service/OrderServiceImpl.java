@@ -37,18 +37,20 @@ public class OrderServiceImpl implements OrderService {
             //랜덤한 아이템수를 채울떄 까지
             while ( j < (int)(Integer.parseInt(env.getProperty("item.maxCnt"))*Math.random()) + 1) {
                 int randomId = (int)(Integer.parseInt(env.getProperty("item.max"))*Math.random()) + 1;
-                Long stockId = new Long(randomId);
+                int randomQty = (int)(Integer.parseInt(env.getProperty("item.maxQty"))*Math.random()) + 1;
+                Long stockId = (long)randomId;
                 StockEntity  stockEntity = stockRepository.findById(stockId).orElseThrow(NoSuchElementException::new);
                 //재고가 있다면
-                if (stockEntity.getAmount() > 0) {
+                if (stockEntity.getAmount() > randomQty) {
                     ItemEntity itemEntity = ItemEntity.builder()
                             .stockId(stockId)
                             .orderEntity(savedOrderEntity)
+                            .qty(randomQty)
                             .build();
                     ItemEntity savedItemEntity = itemRepository.save(itemEntity);
                     ResponseItem responseItem = mapper.map(savedItemEntity, ResponseItem.class);
                     responseItemList.add(responseItem);
-                    stockEntity.setAmount(stockEntity.getAmount() - 1);
+                    stockEntity.setAmount(stockEntity.getAmount() - randomQty);
                     stockRepository.save(stockEntity);
                     j++;
                 }
