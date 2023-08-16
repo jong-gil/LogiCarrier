@@ -1,8 +1,10 @@
 package com.example.robotservice.controller;
 
 import com.example.robotservice.dto.Pick;
+import com.example.robotservice.massagequeue.PlanProducer;
 import com.example.robotservice.service.RobotService;
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,11 +17,11 @@ import java.util.List;
 @RequestMapping("robot-service")
 @RequiredArgsConstructor
 public class RobotController {
-    private final RobotService robotService;
+    private final PlanProducer planProducer;
 
     @GetMapping("")
-    public HashMap<Long, Pick> find(){
-
-        return robotService.find();
+    public String find(){
+        planProducer.requestOrderInfo();
+        return "success";
     }
 }

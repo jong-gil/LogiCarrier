@@ -10,7 +10,6 @@ import java.util.HashMap;
 @Data
 @AllArgsConstructor
 public class CalculateResultDto {
-    //왜 안됨?
     private int distance;
     private int meanCost;
     private boolean isChange;

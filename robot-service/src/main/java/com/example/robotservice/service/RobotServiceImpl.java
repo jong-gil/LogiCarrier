@@ -1,9 +1,6 @@
 package com.example.robotservice.service;
 
-import com.example.robotservice.dto.CalculateResultDto;
-import com.example.robotservice.dto.CandidateDto;
-import com.example.robotservice.dto.ItemRequestDto;
-import com.example.robotservice.dto.Pick;
+import com.example.robotservice.dto.*;
 import com.example.robotservice.jpa.ShelfRepository;
 import com.example.robotservice.jpa.ShelfStockRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +18,7 @@ public class RobotServiceImpl implements RobotService{
     private final ShelfStockRepository stockRepository;
    //어떤 선반이 몇반 골라졌는지
     @Override
-    public HashMap<Long, Pick> find() {
+    public HashMap<Long, Pick> find(Payload payload) {
         List<CandidateDto> candidateDtoList = new ArrayList<>();
         HashMap<Long, ArrayDeque<CandidateDto>> selected = new HashMap<>();  //stockId별로 고른 stock
         HashMap<Long, ArrayList<Integer>> request = new HashMap<>();  // 몇개 필요, 몇개 골랐는지 처음 픽하기 위해
@@ -29,30 +26,19 @@ public class RobotServiceImpl implements RobotService{
         HashMap<Long, Integer> selectHashMap = new HashMap<>();//해당선반 몇번 픽됬는지
         HashMap<Long, Pick> pickHashMap = new HashMap<>(); // 해당선반에서 몇번 스톡을 몇개 꺼내야하는지
 
-        List<ItemRequestDto> stockList = new ArrayList<>();
-        ItemRequestDto itemRequestDto1 = new ItemRequestDto();
-        itemRequestDto1.setId(1L);
-        itemRequestDto1.setQty(2);
-        stockList.add(itemRequestDto1);
-        ItemRequestDto itemRequestDto2 = new ItemRequestDto();
-        itemRequestDto2.setId(2L);
-        itemRequestDto2.setQty(1);
-        stockList.add(itemRequestDto2);
-
         ModelMapper mapper = new ModelMapper();
         mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
 
+
+
         //stockList를 돌면서 후보군 조회
-        for(ItemRequestDto item : stockList){
-            //처음 나온 스톡아이디이면 해쉬맵에 추가
-            if(! selected.containsKey(item.getId())){
-                request.put(item.getId(), new ArrayList<>());
-                request.get(item.getId()).add(item.getQty());
-                request.get(item.getId()).add(0);
+        for(ResponseItem item : payload.getResponseItemList()){
+            //몇개가 필요한지 몇개 골란는지 hashmap에 추가
+            request.put(item.getId(), new ArrayList<>());
+            request.get(item.getId()).add(item.getQty());
+            request.get(item.getId()).add(0);
 
-
-                selected.put(item.getId(), new ArrayDeque<>());
-            }
+            selected.put(item.getId(), new ArrayDeque<>());
 
             List<Object[]> res = stockRepository.findCandidate(item.getId());
             res.forEach(obj ->{
