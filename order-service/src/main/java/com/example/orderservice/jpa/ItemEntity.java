@@ -3,12 +3,14 @@ package com.example.orderservice.jpa;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
+@NoArgsConstructor
 @Table(name = "items")
 public class ItemEntity {
     @Id
@@ -20,17 +22,16 @@ public class ItemEntity {
     @Column(nullable = false)
     private boolean status;
     private String finishedTime;
-    private String name;
-    private String image;
-    private String about;
+    private int qty;
     @ManyToOne
     @JsonBackReference
     @JoinColumn(name="id")
     private OrderEntity orderEntity;
     @Builder
-    public ItemEntity(Long stockId, OrderEntity orderEntity){
+    public ItemEntity(Long stockId, OrderEntity orderEntity,int qty){
         this.status = false;
         this.stockId = stockId;
         this.orderEntity = orderEntity;
+        this.qty = qty;
     }
 }

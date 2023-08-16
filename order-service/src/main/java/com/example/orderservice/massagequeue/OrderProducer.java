@@ -20,11 +20,16 @@ public class OrderProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
 
     public void send(String topic, OrderDto orderDto) {
+        StringBuilder sb = new StringBuilder();
+        orderDto.getResponseItemList().forEach(responseItem -> {
+            sb.append(responseItem.getId())
+                    .append(":")
+                    .append(responseItem.getQty())
+                    .append(",");
+        });
+        sb.deleteCharAt(sb.length() - 1);
         Payload payload = Payload.builder()
-                .userId(orderDto.getUserId())
-                .status(orderDto.getStatus())
-                .finishedTime(orderDto.getFinishedTime())
-                .createdTime(orderDto.getCreatedTime())
+                .id(orderDto.getId())
                 .responseItemList(orderDto.getResponseItemList())
                 .build();
 

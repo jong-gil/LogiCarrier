@@ -16,4 +16,5 @@ public class StockEntity {
     private String about;
     private String image;
     private int amount;
+
 }

@@ -17,6 +17,7 @@ spring:
     password: root
 
 item:
-  max: 100
+  max: 3
   once: 10
   maxCnt: 3
+  maxQty: 3
