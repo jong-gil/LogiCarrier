@@ -37,9 +37,20 @@ spring:
           uri: lb://LOGIN-SERVICE
           predicates:
             - Path=/login-service/**
-            - Method=GET
+            - Method=POST
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/login-service/(?<segment>.*), /$\{segment}
 
+        - id: login-service
+          uri: lb://LOGIN-SERVICE
+          predicates:
+            - Path=/login-service/**
+            - Method=GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
+            - AuthorizationHeaderFilter
 
+token:
+  secret: user_token_for_JSON_Web_Token_and_must_be_longer_to_guarantee_security_of_the_service_CHEER_UP
