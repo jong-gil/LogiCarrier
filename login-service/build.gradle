@@ -21,10 +21,15 @@ repositories {
 	mavenCentral()
 }
 
+ext {
+	set('springCloudVersion', "2021.0.7")
+}
+
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'
@@ -43,11 +48,16 @@ dependencies {
 	//Bean Validation
 	implementation 'javax.validation:validation-api:2.0.1.Final'
 
-/*	// Junit5
-	testImplementation('org.junit.jupiter:junit-jupiter')
-	testImplementation('org.junit.jupiter:junit-jupiter-api')
-	testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine')*/
+	// Spring Cloud clients
+	implementation 'org.springframework.cloud:spring-cloud-starter-config'
+	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+	implementation 'org.springframework.cloud:spring-cloud-starter-bootstrap'
+}
 
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+	}
 }
 
 tasks.named('test') {
