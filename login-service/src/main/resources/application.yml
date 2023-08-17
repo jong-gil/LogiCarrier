@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 0
 
 spring:
   application:
@@ -15,6 +15,15 @@ spring:
     properties:
       hibernate:
         show_sql: true
+
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka
 
 token:
   expiration_time: 86400000   # 하루 길이의 토큰
