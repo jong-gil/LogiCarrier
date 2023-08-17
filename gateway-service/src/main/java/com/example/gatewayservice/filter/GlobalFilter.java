@@ -1,5 +1,6 @@
 package com.example.gatewayservice.filter;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
@@ -38,7 +39,7 @@ public class GlobalFilter extends AbstractGatewayFilterFactory<GlobalFilter.Conf
         return filter;
     }
 
-    @Getter
+    @Data
     public static class Config{
         private String baseMessage;
         private boolean preLogger;
