@@ -1,5 +1,6 @@
 package com.example.robotservice.controller;
 
+import com.example.robotservice.dto.Payload;
 import com.example.robotservice.dto.Pick;
 import com.example.robotservice.massagequeue.PlanProducer;
 import com.example.robotservice.service.RobotService;

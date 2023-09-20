@@ -19,3 +19,6 @@ spring:
 logging:
   level:
     root: INFO
+
+variable:
+  line: 10

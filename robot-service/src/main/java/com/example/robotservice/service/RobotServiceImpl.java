@@ -1,8 +1,8 @@
 package com.example.robotservice.service;
 
 import com.example.robotservice.dto.*;
-import com.example.robotservice.jpa.ShelfRepository;
 import com.example.robotservice.jpa.ShelfStockRepository;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
@@ -14,11 +14,92 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class RobotServiceImpl implements RobotService{
-    private final ShelfRepository shelfRepository;
     private final ShelfStockRepository stockRepository;
-   //어떤 선반이 몇반 골라졌는지
+    private final String[][] field= new String[9][13];
+    private final HashMap<String, Road> roadHash = new HashMap<>();
+
+    @Data
+    public static class Road {
+        private ArrayList<long[]> schedule;
+        private boolean isCorner;
+        public Road(){
+            this.schedule = new ArrayList<>();
+        }
+    }
+
+    public static int[][] deltas  = {
+            {1, 0, -1, 0},
+            {0, 1, 0, -1}
+    };
+
     @Override
-    public HashMap<Long, Pick> find(Payload payload) {
+    public HashMap<Long, Pick> find(Payload payload) throws NullPointerException{
+
+        //field 초기값
+        field[0][2] = "0";
+        field[0][5] = "1";
+        field[0][8] = "2";
+        field[1][2] = "3";
+        field[2][2] = "3";
+        field[3][2] = "3";
+        field[4][2] = "6";
+        field[5][2] = "11";
+        field[6][2] = "11";
+        field[7][2] = "11";
+        field[8][2] = "14";
+        field[1][5] = "4";
+        field[2][5] = "4";
+        field[3][5] = "4";
+        field[4][5] = "8";
+        field[5][5] = "12";
+        field[6][5] = "12";
+        field[7][5] = "12";
+        field[8][5] = "16";
+        field[1][7] = "5";
+        field[2][7] = "5";
+        field[3][7] = "5";
+        field[4][7] = "10";
+        field[5][7] = "13";
+        field[6][7] = "13";
+        field[7][7] = "13";
+        field[8][7] = "18";
+        field[4][3] = "7";
+        field[4][4] = "7";
+        field[4][6] = "9";
+        field[4][7] = "9";
+        field[4][9] = "25";
+        field[4][10] = "25";
+        field[8][3] = "15";
+        field[8][4] = "15";
+        field[8][6] = "17";
+        field[8][7] = "17";
+        field[8][9] = "26";
+        field[8][10] = "26";
+        field[0][11] = "24";
+        field[1][11] = "32";
+        field[2][11] = "32";
+        field[3][11] = "32";
+        field[4][11] = "28";
+        field[5][11] = "29";
+        field[6][11] = "29";
+        field[7][11] = "29";
+        field[8][11] = "30";
+        for(int i = 0; i< 33; i++){
+            roadHash.put(String.valueOf(i), new Road());
+        }
+        roadHash.get("0").isCorner = true;
+        roadHash.get("1").isCorner = true;
+        roadHash.get("2").isCorner = true;
+        roadHash.get("24").isCorner = true;
+        roadHash.get("6").isCorner = true;
+        roadHash.get("8").isCorner = true;
+        roadHash.get("10").isCorner = true;
+        roadHash.get("28").isCorner = true;
+        roadHash.get("14").isCorner = true;
+        roadHash.get("16").isCorner = true;
+        roadHash.get("18").isCorner = true;
+        roadHash.get("30").isCorner = true;
+
         List<CandidateDto> candidateDtoList = new ArrayList<>();
         HashMap<Long, ArrayDeque<CandidateDto>> selected = new HashMap<>();  //stockId별로 고른 stock
         HashMap<Long, ArrayList<Integer>> request = new HashMap<>();  // 몇개 필요, 몇개 골랐는지 처음 픽하기 위해
@@ -28,8 +109,6 @@ public class RobotServiceImpl implements RobotService{
 
         ModelMapper mapper = new ModelMapper();
         mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
-
-
 
         //stockList를 돌면서 후보군 조회
         for(ResponseItem item : payload.getResponseItemList()){
@@ -73,7 +152,6 @@ public class RobotServiceImpl implements RobotService{
         int index = 0;
         //일단 넣어요 1 1 1 2 2 에서 1 1 2 뽑는다 하면  1 1 1 2 읽어야 꽉차서 안되요
         for(CandidateDto candidateDto : candidateDtoList){
-            Long id = candidateDto.getId();
             Long stockId = candidateDto.getStockId();
             if (selected.get(stockId).size() < request.get(stockId).get(0)){
                 selected.get(stockId).add(candidateDto);
@@ -140,12 +218,10 @@ public class RobotServiceImpl implements RobotService{
         return pickHashMap;
     }
 
-    public static CalculateResultDto check(int minCost, HashMap<Long, ArrayDeque<CandidateDto>> selected){
-        ArrayList peakList = new ArrayList<>();
+    public static CalculateResultDto check(int minCost, HashMap<Long, ArrayDeque<CandidateDto>> selected) throws NullPointerException{
         boolean ischange = false;
         int pickerX = selected.get(0L).peek().getX();
         int distance = 0;
-        HashSet<Long> isUsed = new HashSet<>();
         HashMap<Long, Pick> pickHashMap = new HashMap<>();
 
         for (Deque<CandidateDto> deque : selected.values()){
@@ -176,11 +252,119 @@ public class RobotServiceImpl implements RobotService{
             ischange = true;
 
         }
-        CalculateResultDto calculateResultDto = new CalculateResultDto(distance, minCost, ischange, pickHashMap);
 
-        return calculateResultDto;
+        return  new CalculateResultDto(distance, minCost, ischange, pickHashMap);
     }
 
+    public void send(int[] start, int[] pick, int[] end, int turn) {
+        // 선반과 상호작용할 위치 찾기
+        int[] pickField = new int[3];
+        if (pick[1] >= 1 && roadHash.containsKey(field[pick[0]][pick[1] -1])){
+            pickField = new int[]{pick[0], pick[1] - 1};
+        } else if (pick[1] + 1 < field[0].length && roadHash.containsKey(field[pick[0]][pick[1] + 1])) {
+            pickField = new int[]{pick[0], pick[1] + 1};
+        }
+        dfs(start, pickField, end);
+    }
+    public void dfs(int[] start, int[] pick,  int[]end){
+        long[][] visit = new long[9][13];
+        Stack<int[]> ans = new Stack<>();
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 13; j++) {
+                visit[i][j] = Long.MAX_VALUE;
+            }
+        }
+        Stack<int[]> stack = new Stack<>();
+        stack.add(new int[] {start[0], start[1], 0});
+        visit[start[0]][start[1]] = 1;
+        while (! stack.isEmpty()){
+            int[] now = stack.peek();
+            int x = now[0];
+            int y = now[1];
+            int direction = now[2];
+            long time = visit[x][y];
+            //찾으면 가장 빠른 출발 시간 찾기
+            if (now[0] == end[0] && now[1] == end[1] && stack.contains(pick)) {
+                //사용경로키 사이즈 방향 여부 저장
+                ArrayList<String> keyList = new ArrayList<>();
+                ArrayList<Long> sizeList = new ArrayList<>();
+                ArrayList<Boolean> directList = new ArrayList<>();
+                //사용 경로의 키, 사이즈, 방향성 구하기
+                int i = 0;
+                while (i < stack.size()) {
+                    int nx = stack.get(i)[0];
+                    int ny = stack.get(i)[1];
+                    int nDirection = stack.get(i)[2];
+                    keyList.add(field[nx][ny]);
+                    if (nDirection %2 == 0 && !roadHash.get(keyList.get(i)).isCorner) {
+                        directList.add(true);
+                    } else {
+                        directList.add(false);
+                    }
+                    sizeList.add(1L);
+                    while (field[nx][ny].equals(field[stack.get(i)[0]][stack.get(i)[1]])) {
+                        sizeList.set(sizeList.size() - 1, visit[stack.get(i)[0]][stack.get(i)[1]] - nDirection);
+                        i++;
+                    }
+                    i++;
+                }
 
+                //안되는 시간 구하기
+                ArrayList<long[]> disableTime = new ArrayList<>();
+                for (int j = keyList.size() - 1; j >= 0; j--) {
+                    long size = sizeList.get(j);
+                    String key = keyList.get(j);
+                    ArrayList<long[]> schedule = roadHash.get(key).schedule;
+
+                    //이전 값 갱신
+                    for (int k = 0; k < disableTime.size(); k++) {
+                        disableTime.get(i)[0] -= size;
+                        disableTime.get(i)[1] -= size;
+                    }
+                    //불가능한 시간 추가
+                    if (directList.get(j)) {//정방향이면
+                        for (long[] disable : schedule) {
+                            disableTime.add(disable);
+                        }
+                    }else { //역방향일시
+                        if (roadHash.get(key).isCorner){
+                            for (long[] disable : schedule) {
+                                disableTime.add(new long[] {disable[0] - size + 1, disable[1]});
+                            }
+                        }else{
+                            for (long[] disable : schedule) {
+                                disableTime.add(new long[] {disable[0] - size, disable[1] + size});
+                            }
+                        }
+                    }
+
+                }
+
+            }
+
+            boolean logic  = false;
+            for (int i = 0; i < 4; i++) {
+                int dx = x + deltas[0][(i + direction)%4];
+                int dy = y + deltas[1][(i + direction)%4];
+                if (0 <= dx && dx < field.length && 0 <= dy && dy < field[0].length && !field[dx][dy].equals("") && visit[dx][dy] > time ) {
+                    stack.add(new int[]{dx, dy, (i + direction)%4});
+                    visit[dx][dy] = visit[x][y] + i%2 + 1;
+                    //선반 꺼내오기
+                    if (dx == pick[0] && dy == pick[1]){
+                        visit[dx][dy] += 7;
+                    }
+                    if (dx == end[0] && dy == end[1] && (direction%2 == 0)){
+                        visit[dx][dy] += 1;
+                    }
+                    logic = true;
+                    break;
+                }
+            }
+            if (logic){
+                stack.pop();
+            }
+        }
+
+    }
 }
 
