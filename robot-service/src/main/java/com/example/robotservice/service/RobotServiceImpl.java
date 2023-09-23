@@ -15,7 +15,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class RobotServiceImpl implements RobotService{
     private final ShelfStockRepository stockRepository;
-    private final String[][] field= new String[9][13];
+    private final String[][] field = new String[9][13];
     private final HashMap<String, Road> roadHash = new HashMap<>();
 
     @Data
@@ -34,7 +34,11 @@ public class RobotServiceImpl implements RobotService{
 
     @Override
     public HashMap<Long, Pick> find(Payload payload) throws NullPointerException{
-
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 13; j++) {
+                field[i][j] = "";
+            }
+        }
         //field 초기값
         field[0][2] = "0";
         field[0][5] = "1";
@@ -134,17 +138,17 @@ public class RobotServiceImpl implements RobotService{
         selected.put(0L, new ArrayDeque<>());
 
         CandidateDto candidateDto1 = new CandidateDto();
-        candidateDto1.setX(candidateDtoList.get(0).getX());
-        candidateDto1.setY(0);
+        candidateDto1.setX(8);
+        candidateDto1.setY(2);
         candidateDto1.setStockId(0L);
-        candidateDto1.setId(0L);
+        candidateDto1.setId(1000L);
         candidateDtoList.add(candidateDto1);
 
         CandidateDto candidateDto2 = new CandidateDto();
-        candidateDto2.setX(candidateDtoList.get(candidateDtoList.size()-1).getX());
-        candidateDto2.setY(0);
+        candidateDto2.setX(8);
+        candidateDto2.setY(8);
         candidateDto2.setStockId(0L);
-        candidateDto2.setId(0L);
+        candidateDto2.setId(1001L);
         candidateDtoList.add(candidateDto2);
 
 
@@ -167,7 +171,7 @@ public class RobotServiceImpl implements RobotService{
         }
 
         //가득 차면 거리 측정
-        int pickerX = selected.get(0L).peek().getX();
+        int pickerY = selected.get(0L).peek().getY();
         CalculateResultDto res = check(minCost, selected);
         int distance = res.getDistance();
         minCost = res.getMeanCost();
@@ -184,7 +188,6 @@ public class RobotServiceImpl implements RobotService{
                 ArrayDeque<CandidateDto> selectedItem = selected.get(stockId);
                 CandidateDto polled = selectedItem.poll();
                 //제거하는 선반이 여러번 선택되었다면 --, 아니면 제거
-
                 if(selectHashMap.get(polled.getId()) == 1){
                     selectHashMap.remove(polled.getId());
                 }else {
@@ -198,12 +201,13 @@ public class RobotServiceImpl implements RobotService{
                         selectHashMap.put(candidateDto.getId(), selectHashMap.get(candidateDto.getId()) + 1);
                     }else{
                         selectHashMap.put(candidateDto.getId(), 1);
-                        distance += - Math.abs(pickerX - polled.getX()) + Math.abs(pickerX - candidateDto.getX());
+                        distance += - Math.abs(pickerY - polled.getY()) + Math.abs(pickerY - candidateDto.getY());
                         //민코스트가 작다면 해당 정보 저장하기
                         minCost = Math.min(distance, minCost);
                     }
                 }else{
-                    selectHashMap.put(0L, 1);
+                    pickerY = candidateDto.getX();
+                    selectHashMap.put(candidateDto.getId(), 1);
                     res = check(minCost, selected);
                     distance = res.getDistance();
                     minCost = res.getMeanCost();
@@ -215,6 +219,36 @@ public class RobotServiceImpl implements RobotService{
         }
 
         System.out.println("mincost: " + minCost);
+        // 이동해야하는 선반 찾고 이동해야하는 위치와 dfsㄲㄲ
+        int endX = 0;
+        int endY = 0;
+        long pickerId = 0L;
+        for(Long key : pickHashMap.keySet()) {
+            if (key >= 1000) {
+                pickerId = key;
+                break;
+            }
+        }
+
+        for (CandidateDto candidateDto : candidateDtoList) {
+            if (candidateDto.getId() == pickerId) {
+                endX = candidateDto.getX();
+                endY = candidateDto.getY();
+                break;
+            }
+        }
+
+        for(Long key : pickHashMap.keySet()){
+            for(CandidateDto candidateDto : candidateDtoList){
+                if(candidateDto.getId() == key){
+                    int x = candidateDto.getX();
+                    int y = candidateDto.getY();
+
+                    send(new int[] {x, y}, new int[] {endX, endY}, 20L);
+                }
+            }
+        }
+
         return pickHashMap;
     }
 
@@ -256,17 +290,19 @@ public class RobotServiceImpl implements RobotService{
         return  new CalculateResultDto(distance, minCost, ischange, pickHashMap);
     }
 
-    public void send(int[] start, int[] pick, int[] end, int turn) {
+    public void send(int[] pick, int[] end, long turn) {
         // 선반과 상호작용할 위치 찾기
-        int[] pickField = new int[3];
+        int[] pickField = new int[2];
+        int[] start = new int[2];
         if (pick[1] >= 1 && roadHash.containsKey(field[pick[0]][pick[1] -1])){
             pickField = new int[]{pick[0], pick[1] - 1};
         } else if (pick[1] + 1 < field[0].length && roadHash.containsKey(field[pick[0]][pick[1] + 1])) {
             pickField = new int[]{pick[0], pick[1] + 1};
         }
-        dfs(start, pickField, end);
+        start = new int[]{0, pickField[1]};
+        dfs(start, pickField, end, turn, pick);
     }
-    public void dfs(int[] start, int[] pick,  int[]end){
+    public void dfs(int[] start, int[] pick,  int[]end, long turn, int[] shelf){
         long[][] visit = new long[9][13];
         Stack<int[]> ans = new Stack<>();
         for (int i = 0; i < 9; i++) {
@@ -274,6 +310,14 @@ public class RobotServiceImpl implements RobotService{
                 visit[i][j] = Long.MAX_VALUE;
             }
         }
+        //결과
+        ArrayList<String> ansKeyList = new ArrayList<>();
+        ArrayList<Long> ansSizeList = new ArrayList<>();
+        ArrayList<Boolean> ansDirectList = new ArrayList<>();
+        ArrayList<Long> ansStartList = new ArrayList<>();
+        Stack<int[]> ansStack = new Stack<>();
+        long fastest  = 0;
+
         Stack<int[]> stack = new Stack<>();
         stack.add(new int[] {start[0], start[1], 0});
         visit[start[0]][start[1]] = 1;
@@ -284,28 +328,52 @@ public class RobotServiceImpl implements RobotService{
             int direction = now[2];
             long time = visit[x][y];
             //찾으면 가장 빠른 출발 시간 찾기
-            if (now[0] == end[0] && now[1] == end[1] && stack.contains(pick)) {
-                //사용경로키 사이즈 방향 여부 저장
+            if (now[0] == end[0] && now[1] == end[1] && visit[pick[0]][pick[1]] != Long.MAX_VALUE) {
+                //사용경로키 사이즈 방향 진입시간 저장
                 ArrayList<String> keyList = new ArrayList<>();
                 ArrayList<Long> sizeList = new ArrayList<>();
                 ArrayList<Boolean> directList = new ArrayList<>();
+                ArrayList<Long> startList = new ArrayList<>();
+
                 //사용 경로의 키, 사이즈, 방향성 구하기
                 int i = 0;
                 while (i < stack.size()) {
+                    boolean isCorver = false;
                     int nx = stack.get(i)[0];
                     int ny = stack.get(i)[1];
                     int nDirection = stack.get(i)[2];
                     keyList.add(field[nx][ny]);
-                    if (nDirection %2 == 0 && !roadHash.get(keyList.get(i)).isCorner) {
+                    if (nDirection %2 == 0 && !roadHash.get(keyList.get(keyList.size() - 1)).isCorner) {
                         directList.add(true);
                     } else {
                         directList.add(false);
                     }
                     sizeList.add(1L);
-                    while (field[nx][ny].equals(field[stack.get(i)[0]][stack.get(i)[1]])) {
-                        sizeList.set(sizeList.size() - 1, visit[stack.get(i)[0]][stack.get(i)[1]] - nDirection);
-                        i++;
+                    long startTime = visit[nx][ny];
+                    if (i == 0){
+                        startTime = 1L;
+                    }else{
+                        startTime = startList.get(startList.size() - 1) + sizeList.get(sizeList.size() - 2);
                     }
+                    while (i < stack.size() && field[nx][ny].equals(field[stack.get(i)[0]][stack.get(i)[1]])) {
+                        i++;
+                        isCorver = true;
+                    }
+                    if(isCorver) {
+                        i--;
+                        long endTime = visit[stack.get(i)[0]][stack.get(i)[1]];
+                        if(i != 0) {
+                            sizeList.set(sizeList.size() - 1,endTime - startList.get(startList.size() - 1) - sizeList.get(sizeList.size() - 2) + 1);
+                        }else{
+                            sizeList.set(sizeList.size() - 1,endTime);
+                        }
+                    }
+                    if(roadHash.get(keyList.get(keyList.size() - 1)).isCorner){
+                        startList.add(startTime - sizeList.get(sizeList.size() - 1) + 1);
+                    }else {
+                        startList.add(startTime);
+                    }
+
                     i++;
                 }
 
@@ -318,14 +386,12 @@ public class RobotServiceImpl implements RobotService{
 
                     //이전 값 갱신
                     for (int k = 0; k < disableTime.size(); k++) {
-                        disableTime.get(i)[0] -= size;
-                        disableTime.get(i)[1] -= size;
+                        disableTime.get(k)[0] -= size;
+                        disableTime.get(k)[1] -= size;
                     }
                     //불가능한 시간 추가
                     if (directList.get(j)) {//정방향이면
-                        for (long[] disable : schedule) {
-                            disableTime.add(disable);
-                        }
+                        disableTime.addAll(schedule);
                     }else { //역방향일시
                         if (roadHash.get(key).isCorner){
                             for (long[] disable : schedule) {
@@ -339,24 +405,47 @@ public class RobotServiceImpl implements RobotService{
                     }
 
                 }
-
+                //가장 빠른 되는시간 계산 및 결과 저장
+                disableTime.add(new long[]{0, turn});
+                disableTime.sort(new Comparator<long[]>() {
+                    @Override
+                    public int compare(long[] o1, long[] o2) {
+                        return (int) (o1[0] - o2[0]); // 두 시간의 차가 int범위 내야한다!
+                    }
+                });
+                boolean isChange = false;
+                for(long[] disable : disableTime){
+                    if(fastest < disable[0]){
+                        break;
+                    }else if (fastest <disable[1] + 1){
+                        fastest = disable[1] + 1;
+                        isChange = true;
+                    }
+                }
+                if(isChange){
+                    ansKeyList = (ArrayList<String>) keyList.clone();
+                    ansSizeList = (ArrayList<Long>) sizeList.clone();
+                    ansDirectList = (ArrayList<Boolean>) directList.clone();
+                    ansStartList = (ArrayList<Long>) startList.clone();
+                    for (int[] value : stack){
+                        ansStack.add(new int[]{value[0], value[1], value[2]});
+                    }
+                }
+                stack.pop();
+                continue;
             }
 
-            boolean logic  = false;
+            boolean logic  = true;
             for (int i = 0; i < 4; i++) {
                 int dx = x + deltas[0][(i + direction)%4];
                 int dy = y + deltas[1][(i + direction)%4];
-                if (0 <= dx && dx < field.length && 0 <= dy && dy < field[0].length && !field[dx][dy].equals("") && visit[dx][dy] > time ) {
+                long cost = i%2 + 1;
+                if (dx == pick[0] && dy == pick[1]) cost += 7; //선반 꺼내오기
+                if (dx == end[0] && dy == end[1] && !(direction%2 == 0)) cost ++; //마지막에 나가는 방향으로 바꾸기
+                if (0 <= dx && dx < field.length && 0 <= dy && dy < field[0].length && !field[dx][dy].equals("") && visit[dx][dy] > time + cost  && time + cost <= visit[end[0]][end[1]]) {
                     stack.add(new int[]{dx, dy, (i + direction)%4});
-                    visit[dx][dy] = visit[x][y] + i%2 + 1;
-                    //선반 꺼내오기
-                    if (dx == pick[0] && dy == pick[1]){
-                        visit[dx][dy] += 7;
-                    }
-                    if (dx == end[0] && dy == end[1] && (direction%2 == 0)){
-                        visit[dx][dy] += 1;
-                    }
-                    logic = true;
+                    visit[dx][dy] = visit[x][y] + cost;
+                    logic = false;
                     break;
                 }
             }
@@ -364,7 +453,74 @@ public class RobotServiceImpl implements RobotService{
                 stack.pop();
             }
         }
-
+        // 안되는 시간 갱신
+        for (int j = ansKeyList.size() - 1; j >= 0; j--) {
+            long size = ansSizeList.get(j);
+            long time = ansStartList.get(j);
+            String key = ansKeyList.get(j);
+            //불가능한 시간 추가
+            if (ansDirectList.get(j)) {//정방향이면
+                roadHash.get(key).schedule.add(new long[]{time + fastest - 1, time + fastest - 1});
+            }else { //역방향일시
+                if (roadHash.get(key).isCorner){
+                    roadHash.get(key).schedule.add(new long[] {time + fastest - 1, time + size - 1 + fastest - 1});
+                }else{
+                        roadHash.get(key).schedule.add(new long[] {time - size + fastest - 1, time + size + fastest - 1});
+                }
+            }
+        }
+        //경로 출력
+        StringBuilder sb = new StringBuilder();
+        int direction = ansStack.get(0)[2];
+        int i = 1;
+        while (i < ansStack.size()){
+            int[] now = ansStack.get(i);
+            if (now[2] == direction) {
+                sb.append('U');
+            }else if(now[2] == (direction+1)%4){
+                sb.append('R');
+            }else {
+                sb.append('L');
+            }
+            if (now[0] == pick[0] && now[1] == pick[1]){
+                for (int j = 0; j < 4; j++) {
+                    int dx = pick[0] + deltas[0][(j + direction) % 4];
+                    int dy = pick[1] + deltas[1][(j + direction) % 4];
+                    if (Arrays.equals(shelf, new int[]{dx, dy})) {
+                        if (j == 3) {
+                            sb.append("RUTRRUR");
+                        }else {
+                            sb.append("LUTLLUL");
+                        }
+                    }
+                }
+            }
+            i++;
+        }
+        //압축
+        StringBuilder pressured = new StringBuilder();
+        char[] unPressured= sb.toString().toCharArray();
+        int j = 1;
+        pressured.append(unPressured[0]);
+        pressured.append("1 "); //같은 명령이 10번 되면 안된다 귀찮아요
+        while (j < unPressured.length){
+            if (pressured.charAt(pressured.length() - 3) != unPressured[j]){
+                pressured.append(unPressured[j]);
+                pressured.append("1 ");
+                j++;
+                continue;
+            }
+            int cnt = Character.getNumericValue(pressured.charAt(pressured.length() - 2));
+            while(j < unPressured.length && pressured.charAt(pressured.length() - 3) == unPressured[j]){
+                cnt ++;
+                j ++;
+            }
+            pressured.deleteCharAt(pressured.length()-1);
+            pressured.deleteCharAt(pressured.length()-1);
+            pressured.append(cnt);
+            pressured.append(" ");
+        }
+        System.out.println(pressured.toString());
     }
 }
 
