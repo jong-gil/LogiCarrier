@@ -1,4 +1,4 @@
-package com.example.websocketdemo.dto;
+package com.example.robotservice.dto;
 
 import lombok.Builder;
 import lombok.Data;

@@ -1,13 +1,11 @@
-package com.example.websocketdemo.handler;
+package com.example.robotservice.handler;
 
-import com.example.websocketdemo.dto.MessageReceiveDto;
-import com.example.websocketdemo.dto.MessageSendDto;
+import com.example.robotservice.dto.MessageReceiveDto;
+import com.example.robotservice.dto.MessageSendDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
-
 
 import java.util.HashMap;
 

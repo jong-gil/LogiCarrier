@@ -1,4 +1,4 @@
-package com.example.websocketdemo.config;
+package com.example.robotservice.config;
 
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;

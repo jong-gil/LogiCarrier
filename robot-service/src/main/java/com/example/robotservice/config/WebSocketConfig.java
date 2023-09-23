@@ -1,6 +1,6 @@
-package com.example.websocketdemo.config;
+package com.example.robotservice.config;
 
-import com.example.websocketdemo.handler.RobotHandler;
+import com.example.robotservice.handler.RobotHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +12,7 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket
 @RequiredArgsConstructor
 @Slf4j
-public class WebSocketConfig1 implements WebSocketConfigurer {
+public class WebSocketConfig implements WebSocketConfigurer {
     private final RobotHandler robotHandler;
 
     @Override

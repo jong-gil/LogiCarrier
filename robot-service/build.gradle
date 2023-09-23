@@ -38,6 +38,9 @@ dependencies {
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
 	implementation group: 'org.modelmapper', name: 'modelmapper', version: '3.1.1'
 
+	// webSocket
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
 }
 
 dependencyManagement {
