@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService{
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserRepository userRepo;
