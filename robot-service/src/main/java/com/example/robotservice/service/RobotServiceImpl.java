@@ -59,14 +59,14 @@ public class RobotServiceImpl implements RobotService{
         field[6][5] = "12";
         field[7][5] = "12";
         field[8][5] = "16";
-        field[1][7] = "5";
-        field[2][7] = "5";
-        field[3][7] = "5";
-        field[4][7] = "10";
-        field[5][7] = "13";
-        field[6][7] = "13";
-        field[7][7] = "13";
-        field[8][7] = "18";
+        field[1][8] = "5";
+        field[2][8] = "5";
+        field[3][8] = "5";
+        field[4][8] = "10";
+        field[5][8] = "13";
+        field[6][8] = "13";
+        field[7][8] = "13";
+        field[8][8] = "18";
         field[4][3] = "7";
         field[4][4] = "7";
         field[4][6] = "9";
@@ -240,11 +240,12 @@ public class RobotServiceImpl implements RobotService{
 
         for(Long key : pickHashMap.keySet()){
             for(CandidateDto candidateDto : candidateDtoList){
-                if(candidateDto.getId() == key){
+                if(candidateDto.getId() == key && candidateDto.getStockId() != 0L){
                     int x = candidateDto.getX();
                     int y = candidateDto.getY();
 
                     send(new int[] {x, y}, new int[] {endX, endY}, 20L);
+                    break;
                 }
             }
         }
@@ -459,7 +460,7 @@ public class RobotServiceImpl implements RobotService{
             long time = ansStartList.get(j);
             String key = ansKeyList.get(j);
             //불가능한 시간 추가
-            if (ansDirectList.get(j)) {//정방향이면
+            if (ansDirectList.get(j) && !field[pick[0]][pick[1]].equals(key) ) {//정방향고 선반을 픽업하지 않으면
                 roadHash.get(key).schedule.add(new long[]{time + fastest - 1, time + fastest - 1});
             }else { //역방향일시
                 if (roadHash.get(key).isCorner){
@@ -479,15 +480,17 @@ public class RobotServiceImpl implements RobotService{
                 sb.append('U');
             }else if(now[2] == (direction+1)%4){
                 sb.append('R');
+                direction = 1;
             }else {
                 sb.append('L');
+                direction = 3;
             }
             if (now[0] == pick[0] && now[1] == pick[1]){
                 for (int j = 0; j < 4; j++) {
                     int dx = pick[0] + deltas[0][(j + direction) % 4];
                     int dy = pick[1] + deltas[1][(j + direction) % 4];
                     if (Arrays.equals(shelf, new int[]{dx, dy})) {
-                        if (j == 3) {
+                        if (j == 1) {
                             sb.append("RUTRRUR");
                         }else {
                             sb.append("LUTLLUL");
