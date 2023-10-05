@@ -1,17 +1,13 @@
 package com.example.orderservice.massagequeue;
 
-import com.example.orderservice.dto.ItemFinishDto;
-import com.example.orderservice.dto.OrderDto;
-import com.example.orderservice.dto.OrderRequestDto;
-import com.example.orderservice.dto.ResponseItem;
-import com.example.orderservice.jpa.ItemEntity;
-import com.example.orderservice.jpa.ItemRepository;
-import com.example.orderservice.jpa.OrderEntity;
-import com.example.orderservice.jpa.OrderRepository;
+import com.example.orderservice.dto.*;
+import com.example.orderservice.jpa.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -21,11 +17,15 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class KafkaConsumer {
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
     private final OrderProducer orderProducer;
+    private final StockRepository stockRepository;
+
+    private final KafkaTemplate<String, String> kafkaTemplate;
     //요청받은 주문과 아이템 정보 orderInfo로 produce
     @KafkaListener(topics = "orders")
     public void orders(String message) throws IOException {
@@ -84,6 +84,19 @@ public class KafkaConsumer {
         }
         orderDto.setResponseItemList(responseItemList);
         orderProducer.send("targetInfo", orderDto);
-        System.out.println(String.format("Consumed message : %s", message));
+        log.info(String.format("Consumed message : %s", message));
+    }
+
+    @KafkaListener(topics = "stockInfoRequest")
+    public void stockInfo(String message) throws IOException {
+        StockEntity stockEntity = stockRepository.findById(Long.parseLong(message)).orElseThrow();
+        StockInfoDto stockInfoDto = StockInfoDto.builder()
+                .id(stockEntity.getId())
+                .about(stockEntity.getAbout())
+                .image(stockEntity.getImage())
+                .name(stockEntity.getName())
+                .build();
+        kafkaTemplate.send("stockInfo", stockInfoDto.toString());
+        log.info(String.format("Consumed message : %s", message));
     }
 }
