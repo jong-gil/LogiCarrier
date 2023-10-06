@@ -9,5 +9,5 @@ import java.util.HashMap;
 import java.util.List;
 
 public interface RobotService {
-    HashMap<Long, Pick> find(Payload payload);
+    HashMap<Long, Pick> find(Payload payload) throws Exception;
 }

@@ -1,28 +1,20 @@
 package com.example.robotservice.controller;
 
-import com.example.robotservice.dto.Payload;
-import com.example.robotservice.dto.Pick;
-import com.example.robotservice.massagequeue.PlanProducer;
-import com.example.robotservice.service.RobotService;
+import com.example.robotservice.massagequeue.KafkaProducer;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 @RestController
 @RequestMapping("robot-service")
 @RequiredArgsConstructor
 public class RobotController {
-    private final PlanProducer planProducer;
+    private final KafkaProducer kafkaProducer;
 
     @GetMapping("")
     public String find(){
-        planProducer.requestOrderInfo();
+        kafkaProducer.requestOrderInfo();
         return "success";
     }
 }

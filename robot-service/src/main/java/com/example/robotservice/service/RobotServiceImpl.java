@@ -1,11 +1,14 @@
 package com.example.robotservice.service;
 
 import com.example.robotservice.dto.*;
-import com.example.robotservice.jpa.ShelfStockRepository;
+import com.example.robotservice.handler.RobotHandler;
+import com.example.robotservice.jpa.*;
+import com.example.robotservice.massagequeue.KafkaProducer;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -14,7 +17,12 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class RobotServiceImpl implements RobotService{
+    private final KafkaProducer kafkaProducer;
+    private final ShelfRepository shelfRepository;
+    private final PickerRepository pickerRepository;
     private final ShelfStockRepository stockRepository;
+    private final RobotRepository robotRepository;
+    private final RobotHandler robotHandler;
     private final String[][] field = new String[9][13];
     private final HashMap<String, Road> roadHash = new HashMap<>();
 
@@ -33,7 +41,7 @@ public class RobotServiceImpl implements RobotService{
     };
 
     @Override
-    public HashMap<Long, Pick> find(Payload payload) throws NullPointerException{
+    public HashMap<Long, Pick> find(Payload payload) throws Exception {
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 13; j++) {
                 field[i][j] = "";
@@ -130,26 +138,21 @@ public class RobotServiceImpl implements RobotService{
             });
         }
 
-        //피커위치 카프카로 받아오기 candidatedto와 동일
+        //피커위치 받아오기
         request.put(0L, new ArrayList<>());
         request.get(0L).add(1);
         request.get(0L).add(0);
 
         selected.put(0L, new ArrayDeque<>());
-
-        CandidateDto candidateDto1 = new CandidateDto();
-        candidateDto1.setX(8);
-        candidateDto1.setY(2);
-        candidateDto1.setStockId(0L);
-        candidateDto1.setId(1000L);
-        candidateDtoList.add(candidateDto1);
-
-        CandidateDto candidateDto2 = new CandidateDto();
-        candidateDto2.setX(8);
-        candidateDto2.setY(8);
-        candidateDto2.setStockId(0L);
-        candidateDto2.setId(1001L);
-        candidateDtoList.add(candidateDto2);
+        List<Picker> pickerList = pickerRepository.findByAssignmentLessThan(10);
+        for(Picker picker : pickerList){
+            CandidateDto candidateDto = CandidateDto.build(0L,
+                    100000 + picker.getPickerId(),
+                    picker.getX(),
+                    picker.getY()
+            );
+            candidateDtoList.add(candidateDto);
+        }
 
 
 
@@ -237,14 +240,19 @@ public class RobotServiceImpl implements RobotService{
                 break;
             }
         }
-
+        
         for(Long key : pickHashMap.keySet()){
             for(CandidateDto candidateDto : candidateDtoList){
                 if(candidateDto.getId() == key && candidateDto.getStockId() != 0L){
                     int x = candidateDto.getX();
                     int y = candidateDto.getY();
+                    Shelf shelf = shelfRepository.findById(candidateDto.getId()).orElseThrow(); // shelf 할당
+                    shelf.setStatus(true);
+                    shelfRepository.save(shelf);
 
-                    send(new int[] {x, y}, new int[] {endX, endY}, 20L);
+
+
+                    send(new int[] {x, y}, new int[] {endX, endY}, 20L, candidateDto.getId()); // 최단거리, 턴 계산
                     break;
                 }
             }
@@ -253,7 +261,7 @@ public class RobotServiceImpl implements RobotService{
         return pickHashMap;
     }
 
-    public static CalculateResultDto check(int minCost, HashMap<Long, ArrayDeque<CandidateDto>> selected) throws NullPointerException{
+    public static CalculateResultDto check(int minCost, HashMap<Long, ArrayDeque<CandidateDto>> selected) throws Exception{
         boolean ischange = false;
         int pickerX = selected.get(0L).peek().getX();
         int distance = 0;
@@ -291,7 +299,7 @@ public class RobotServiceImpl implements RobotService{
         return  new CalculateResultDto(distance, minCost, ischange, pickHashMap);
     }
 
-    public void send(int[] pick, int[] end, long turn) {
+    public void send(int[] pick, int[] end, long turn, long shelfId) throws Exception {
         // 선반과 상호작용할 위치 찾기
         int[] pickField = new int[2];
         int[] start = new int[2];
@@ -301,9 +309,9 @@ public class RobotServiceImpl implements RobotService{
             pickField = new int[]{pick[0], pick[1] + 1};
         }
         start = new int[]{0, pickField[1]};
-        dfs(start, pickField, end, turn, pick);
+        dfs(start, pickField, end, turn, pick, shelfId);
     }
-    public void dfs(int[] start, int[] pick,  int[]end, long turn, int[] shelf){
+    public void dfs(int[] start, int[] pick,  int[]end, long turn, int[] shelf, long shelfId) throws Exception{
         long[][] visit = new long[9][13];
         Stack<int[]> ans = new Stack<>();
         for (int i = 0; i < 9; i++) {
@@ -523,6 +531,8 @@ public class RobotServiceImpl implements RobotService{
             pressured.append(cnt);
             pressured.append(" ");
         }
+        Robot robot = robotRepository.findByPositionXAndPositionY(start[0], start[1]).orElseThrow();
+        robotHandler.sendCommand(robot.getRobotId(), pressured.toString(), robot.getPositionX(), robot.getPositionY(), shelfId);
         System.out.println(pressured.toString());
     }
 }

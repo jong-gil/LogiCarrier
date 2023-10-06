@@ -2,6 +2,7 @@ package com.example.robotservice.massagequeue;
 
 
 import com.example.robotservice.dto.CalculateResultDto;
+import com.example.robotservice.dto.Payload;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -13,10 +14,10 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class PlanProducer {
+public class KafkaProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
 
-    public void send(String topic, CalculateResultDto calculateResultDto) {
+    public void plan(String topic, CalculateResultDto calculateResultDto) {
 
         ObjectMapper mapper = new ObjectMapper();
         String jsonInString = "";
@@ -27,6 +28,17 @@ public class PlanProducer {
         }
 
         kafkaTemplate.send(topic, jsonInString);
+        log.info("Order Producer sent data from the Order microservice: " + calculateResultDto);
+    }
+    //수정 필요
+    public void result(String topic, Payload payload, CalculateResultDto calculateResultDto) {
+
+        ObjectMapper mapper = new ObjectMapper();
+        StringBuilder st = new StringBuilder();
+        st.append(payload.toString());
+
+
+        kafkaTemplate.send(topic, st.toString());
         log.info("Order Producer sent data from the Order microservice: " + calculateResultDto);
     }
     public void requestOrderInfo() {

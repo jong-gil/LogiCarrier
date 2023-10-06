@@ -38,13 +38,14 @@ public class RobotHandler implements WebSocketHandler {
     }
 
     // 서버가 보낼 때
-    public void sendCommand(Long robotId, String route, int positionX, int positionY) throws Exception {
+    public void sendCommand(Long robotId, String route, int positionX, int positionY, long shelfId) throws Exception {
         WebSocketSession session = sessionMap.get(robotId);
 
         MessageSendDto messageSendDto = MessageSendDto.builder()
                 .positionX(positionX)
                 .positionY(positionY)
                 .route(route)
+                .shelfId(shelfId)
                 .build();
 
         WebSocketMessage<?> message = new TextMessage(messageSendDto.toString());

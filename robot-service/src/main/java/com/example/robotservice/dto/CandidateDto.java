@@ -26,7 +26,7 @@ public class CandidateDto implements Comparable<CandidateDto>{
         return this.getX() - o.getX();
     }
 
-    public CandidateDto build(Long stockId, Long id, int x, int y) {
+    public static CandidateDto build(Long stockId, Long id, int x, int y) {
         CandidateDto candidateDto = new CandidateDto();
         candidateDto.setStockId(stockId);
         candidateDto.setId(id);
