@@ -240,7 +240,7 @@ public class RobotServiceImpl implements RobotService{
                 break;
             }
         }
-        
+
         for(Long key : pickHashMap.keySet()){
             for(CandidateDto candidateDto : candidateDtoList){
                 if(candidateDto.getId() == key && candidateDto.getStockId() != 0L){
