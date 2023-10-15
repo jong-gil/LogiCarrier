@@ -31,16 +31,16 @@ public class KafkaProducer {
         log.info("Order Producer sent data from the Order microservice: " + calculateResultDto);
     }
     //수정 필요
-    public void result(String topic, Payload payload, CalculateResultDto calculateResultDto) {
-
-        ObjectMapper mapper = new ObjectMapper();
-        StringBuilder st = new StringBuilder();
-        st.append(payload.toString());
-
-
-        kafkaTemplate.send(topic, st.toString());
-        log.info("Order Producer sent data from the Order microservice: " + calculateResultDto);
-    }
+//    public void result(String topic, Payload payload, CalculateResultDto calculateResultDto) {
+//
+//        ObjectMapper mapper = new ObjectMapper();
+//        StringBuilder st = new StringBuilder();
+//        st.append(payload.toString());
+//
+//
+//        kafkaTemplate.send(topic, st.toString());
+//        log.info("Order Producer sent data from the Order microservice: " + calculateResultDto);
+//    }
     public void requestOrderInfo() {
         kafkaTemplate.send("nextOrders", "from robot-service!");
         log.info("OrderInfo Requested!");

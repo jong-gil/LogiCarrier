@@ -1,8 +1,8 @@
-package com.example.robotservice.jpa;
+package com.example.robotservice.Repoistory;
 
+import com.example.robotservice.entity.Shelf;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;
 

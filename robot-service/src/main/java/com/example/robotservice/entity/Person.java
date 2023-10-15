@@ -1,4 +1,4 @@
-package com.example.robotservice.RedisEntity;
+package com.example.robotservice.entity;
 
 import lombok.Getter;
 import org.springframework.data.redis.core.RedisHash;

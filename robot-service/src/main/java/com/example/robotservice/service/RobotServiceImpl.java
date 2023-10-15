@@ -1,27 +1,30 @@
 package com.example.robotservice.service;
 
+import com.example.robotservice.Repoistory.PickerRepository;
+import com.example.robotservice.Repoistory.ShelfRepository;
+import com.example.robotservice.Repoistory.ShelfStockRepository;
 import com.example.robotservice.dto.*;
 import com.example.robotservice.handler.RobotHandler;
-import com.example.robotservice.jpa.*;
-import com.example.robotservice.massagequeue.KafkaProducer;
+import com.example.robotservice.entity.*;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class RobotServiceImpl implements RobotService{
-    private final KafkaProducer kafkaProducer;
     private final ShelfRepository shelfRepository;
     private final PickerRepository pickerRepository;
     private final ShelfStockRepository stockRepository;
-    private final RobotRepository robotRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
     private final RobotHandler robotHandler;
     private final String[][] field = new String[9][13];
     private final HashMap<String, Road> roadHash = new HashMap<>();
@@ -41,7 +44,7 @@ public class RobotServiceImpl implements RobotService{
     };
 
     @Override
-    public HashMap<Long, Pick> find(Payload payload) throws Exception {
+    public Boolean find(Payload payload) throws Exception {
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 13; j++) {
                 field[i][j] = "";
@@ -136,6 +139,10 @@ public class RobotServiceImpl implements RobotService{
                 CandidateDto candidateDto = new CandidateDto().fromObj(obj);
                 candidateDtoList.add(candidateDto);
             });
+            //db에서 조회한 stock의 수가 필요한수보다 적다면 중단
+            if(item.getQty() > res.size()){
+                return false;
+            }
         }
 
         //피커위치 받아오기
@@ -153,11 +160,15 @@ public class RobotServiceImpl implements RobotService{
             );
             candidateDtoList.add(candidateDto);
         }
+        //물건을 받을수 있는 피커가 없다면 false 반환
+        if (pickerList.isEmpty()) {
+            return false;
+        }
 
 
 
         int index = 0;
-        //일단 넣어요 1 1 1 2 2 에서 1 1 2 뽑는다 하면  1 1 1 2 읽어야 꽉차서 안되요
+        //일단 넣어요 1 1 1 2 2 에서 1 1 2 뽑는다 하면  1 1 1 2 읽어야 꽉차서 안되요 없어 못채우면? 블가능함
         for(CandidateDto candidateDto : candidateDtoList){
             Long stockId = candidateDto.getStockId();
             if (selected.get(stockId).size() < request.get(stockId).get(0)){
@@ -172,7 +183,6 @@ public class RobotServiceImpl implements RobotService{
                 index ++;
             }
         }
-
         //가득 차면 거리 측정
         int pickerY = selected.get(0L).peek().getY();
         CalculateResultDto res = check(minCost, selected);
@@ -258,7 +268,7 @@ public class RobotServiceImpl implements RobotService{
             }
         }
 
-        return pickHashMap;
+        return true;
     }
 
     public static CalculateResultDto check(int minCost, HashMap<Long, ArrayDeque<CandidateDto>> selected) throws Exception{
@@ -531,9 +541,9 @@ public class RobotServiceImpl implements RobotService{
             pressured.append(cnt);
             pressured.append(" ");
         }
-        Robot robot = robotRepository.findByPositionXAndPositionY(start[0], start[1]).orElseThrow();
-        robotHandler.sendCommand(robot.getRobotId(), pressured.toString(), robot.getPositionX(), robot.getPositionY(), shelfId);
-        System.out.println(pressured.toString());
+//        Robot robot = robotRepository.findByPositionXAndPositionY(start[0], start[1]).orElseThrow();
+//        robotHandler.sendCommand(robot.getRobotId(), pressured.toString(), robot.getPositionX(), robot.getPositionY(), shelfId);//해당 로봇에게 메세지 전달
+//        log.info(pressured.toString());
     }
 }
 

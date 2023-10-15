@@ -1,4 +1,4 @@
-package com.example.robotservice.jpa;
+package com.example.robotservice.entity;
 
 import lombok.Data;
 
