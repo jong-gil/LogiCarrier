@@ -14,7 +14,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -66,7 +65,6 @@ public class RedisRepositoryTest {
     public void robotStackTest() throws JsonMappingException, JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         HashOperations<String, Object, Object> hashOperations = redisTemplate.opsForHash();
-        HashOperations<String, Object, Object> robotStackHash = redisTemplate.opsForHash();
 
         Map<String, String> map = new HashMap<>();
         Robot testRobot = Robot.builder()
@@ -76,14 +74,14 @@ public class RedisRepositoryTest {
                 .shelfId(null)
                 .battery(100)
                 .build();
-        map.put("1", testRobot.toString());
-        hashOperations.putAll("key", map);
+        map.put("1", objectMapper.writeValueAsString(testRobot));
+        hashOperations.putAll("robot", map);
 
         Map<String, String> map2 = new HashMap<>();
         Stack<String> stack = new Stack<>();
         stack.add("1");
         RobotStack robotStack = RobotStack.builder()
-                .robotIdList(stack)
+                .robotIdStack(stack)
                 .build();
 
         String jsonInString = "";
@@ -93,16 +91,19 @@ public class RedisRepositoryTest {
             ex.printStackTrace();
         }
 
-        map2.put("robotStack1", jsonInString);
+        map2.put("0", jsonInString);
 
-        robotStackHash.putAll("robotStack", map2);
-        RobotStack robotStack1 = objectMapper.readValue((String) robotStackHash.get("robotStack", "robotStack1"), RobotStack.class);
-        for (String id : robotStack1.getRobotIdList()) {
+        hashOperations.putAll("robotStack", map2);
+        RobotStack robotStack1 = objectMapper.readValue((String) hashOperations.get("robotStack", "0"), RobotStack.class);
+        for (String id : robotStack1.getRobotIdStack()) {
             System.out.println(id);
-            System.out.println(hashOperations.get("key", id));
+            System.out.println(hashOperations.get("robot", id));
         }
 
-        redisTemplate.delete("key");
-        redisTemplate.delete("robotStack");
+        //redisTemplate.delete("robot");
+        //redisTemplate.delete("robotStack");
     }
+
+
+
 }

@@ -3,14 +3,19 @@ package com.example.robotservice.service;
 import com.example.robotservice.Repoistory.PickerRepository;
 import com.example.robotservice.Repoistory.ShelfRepository;
 import com.example.robotservice.Repoistory.ShelfStockRepository;
-import com.example.robotservice.dto.*;
+import com.example.robotservice.dto.CalculateResultDto;
+import com.example.robotservice.dto.CandidateDto;
+import com.example.robotservice.dto.Pick;
+import com.example.robotservice.dto.ResponseItem;
 import com.example.robotservice.handler.RobotHandler;
 import com.example.robotservice.entity.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -488,8 +493,22 @@ public class RobotServiceImpl implements RobotService{
                 }
             }
         }
+        //출발지에 대기중인 로봇 스택 읽기
+        ObjectMapper objectMapper = new ObjectMapper();
+        HashOperations<String, Object, Object> hashOperations = redisTemplate.opsForHash();
+        RobotStack robotStack = objectMapper.
+                readValue((String)hashOperations.get("robotStack", field[start[0]][start[1]]), RobotStack.class);
+
+        Stack<String> robotIdStack = robotStack.getRobotIdStack();
+        String id = robotIdStack.pop();
+        Robot robot = objectMapper.readValue((String)hashOperations.get("robot", id), Robot.class);
+
         //경로 출력
         StringBuilder sb = new StringBuilder();
+        //stack의 최대 길이는 5
+        for (int k = 0; k < 5 - robotIdStack.size() - 1; k++){
+            sb.append('U');
+        }
         int direction = ansStack.get(0)[2];
         int i = 1;
         while (i < ansStack.size()){
@@ -541,9 +560,9 @@ public class RobotServiceImpl implements RobotService{
             pressured.append(cnt);
             pressured.append(" ");
         }
-//        Robot robot = robotRepository.findByPositionXAndPositionY(start[0], start[1]).orElseThrow();
-//        robotHandler.sendCommand(robot.getRobotId(), pressured.toString(), robot.getPositionX(), robot.getPositionY(), shelfId);//해당 로봇에게 메세지 전달
-//        log.info(pressured.toString());
+
+        robotHandler.sendCommand(robot.getRobotId(), pressured.toString(), robot.getPositionX(), robot.getPositionY(), shelfId, turn,fastest);//해당 로봇에게 메세지 전달
+        log.info(pressured.toString());
     }
 }
 

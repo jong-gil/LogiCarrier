@@ -2,8 +2,12 @@ package com.example.robotservice.handler;
 
 import com.example.robotservice.dto.MessageReceiveDto;
 import com.example.robotservice.dto.MessageSendDto;
+import com.example.robotservice.entity.Robot;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.HashOperations;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 
@@ -15,6 +19,7 @@ import java.util.HashMap;
 @RequiredArgsConstructor
 public class RobotHandler implements WebSocketHandler {
     private final static HashMap<String, WebSocketSession> sessionMap = new HashMap<>();
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
@@ -27,24 +32,30 @@ public class RobotHandler implements WebSocketHandler {
     // 로봇이 보낼 때
     @Override
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        HashOperations<String, Object, Object> hashOperations = redisTemplate.opsForHash();
 
         // 로봇 선택
         String robotId = session.getAttributes().get("robotId").toString();
-
-        MessageReceiveDto messageReceiveDto = MessageReceiveDto.builder()
-                .batteryPercent(Integer.parseInt(message.getPayload().toString()))
-                .build();
-
+        //받은 정보 레디스로
+        MessageReceiveDto messageReceiveDto = objectMapper.readValue((String) message.getPayload(), MessageReceiveDto.class);
+        Robot robot = objectMapper.readValue((String) hashOperations.get("robot", robotId), Robot.class);
+        robot.setBattery(messageReceiveDto.getBatteryPercent());
+        robot.setPositionX(messageReceiveDto.getX());
+        robot.setPositionY(messageReceiveDto.getY());
+        hashOperations.put("robot", robotId, objectMapper.writeValueAsString(robot));
     }
 
     // 서버가 보낼 때
-    public void sendCommand(Long robotId, String route, int positionX, int positionY, long shelfId) throws Exception {
+    public void sendCommand(String robotId, String route, int positionX, int positionY, long shelfId, long now, long turn) throws Exception {
         WebSocketSession session = sessionMap.get(robotId);
 
         MessageSendDto messageSendDto = MessageSendDto.builder()
                 .positionX(positionX)
                 .positionY(positionY)
                 .route(route)
+                .now(now)
+                .turn(turn)
                 .shelfId(shelfId)
                 .build();
 

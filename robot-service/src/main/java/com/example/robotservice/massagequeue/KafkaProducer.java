@@ -2,7 +2,6 @@ package com.example.robotservice.massagequeue;
 
 
 import com.example.robotservice.dto.CalculateResultDto;
-import com.example.robotservice.dto.Payload;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
