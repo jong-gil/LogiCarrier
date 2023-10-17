@@ -2,12 +2,15 @@ package com.example.robotservice.handler;
 
 import com.example.robotservice.dto.MessageReceiveDto;
 import com.example.robotservice.dto.MessageSendDto;
+import com.example.robotservice.entity.Payload;
 import com.example.robotservice.entity.Robot;
+import com.example.robotservice.service.RobotService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SetOperations;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 
@@ -20,6 +23,8 @@ import java.util.HashMap;
 public class RobotHandler implements WebSocketHandler {
     private final static HashMap<String, WebSocketSession> sessionMap = new HashMap<>();
     private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, String> stringRedisTemplate;
+    private final RobotService robotService;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
@@ -34,6 +39,7 @@ public class RobotHandler implements WebSocketHandler {
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         HashOperations<String, Object, Object> hashOperations = redisTemplate.opsForHash();
+        SetOperations<String, String> setOperations = stringRedisTemplate.opsForSet();
 
         // 로봇 선택
         String robotId = session.getAttributes().get("robotId").toString();
@@ -44,6 +50,17 @@ public class RobotHandler implements WebSocketHandler {
         robot.setPositionX(messageReceiveDto.getX());
         robot.setPositionY(messageReceiveDto.getY());
         hashOperations.put("robot", robotId, objectMapper.writeValueAsString(robot));
+        StringBuilder sb = new StringBuilder();
+        sb.append(robot.getPositionX());
+        sb.append(robot.getPositionY());
+        //돌아가는 출발지면 돌아가는 경로 탐색
+        if(setOperations.isMember("readyToGo", sb.toString())){
+            int[] start = new int[]{robot.getPositionX(), robot.getPositionY()};
+            Long shelfId = robot.getShelfId();
+            robotService.receive(start, shelfId);
+
+        }
+
     }
 
     // 서버가 보낼 때

@@ -6,6 +6,7 @@ import com.example.robotservice.Repoistory.ShelfStockRepository;
 import com.example.robotservice.dto.*;
 import com.example.robotservice.handler.RobotHandler;
 import com.example.robotservice.entity.*;
+import com.example.robotservice.massagequeue.KafkaProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -28,11 +29,11 @@ public class RobotServiceImpl implements RobotService{
     private final PickerRepository pickerRepository;
     private final ShelfStockRepository stockRepository;
     private final RedisTemplate<String, Object> redisTemplate;
-    private final RedisTemplate<String, String> turnRedisTemplate;
+    private final RedisTemplate<String, String> stringRedisTemplate;
     private final RobotHandler robotHandler;
     private final String[][] field = new String[9][13];
     private final HashMap<String, Road> roadHash = new HashMap<>();
-
+    private final KafkaProducer kafkaProducer;
     @Data
     public static class Road {
         private ArrayList<long[]> schedule;
@@ -119,7 +120,8 @@ public class RobotServiceImpl implements RobotService{
         roadHash.get("18").isCorner = true;
         roadHash.get("30").isCorner = true;
 
-        ValueOperations<String, String> valueOperations = turnRedisTemplate.opsForValue();
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+
         ObjectMapper objectMapper = new ObjectMapper();
         Long turn = objectMapper.readValue(valueOperations.get("turn"),Long.class);
 
@@ -277,6 +279,26 @@ public class RobotServiceImpl implements RobotService{
         }
 
         return true;
+    }
+
+    @Override
+    public void receive(int[] start, Long shelfId) throws Exception{
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        Long turn = objectMapper.readValue(valueOperations.get("turn"),Long.class);
+        Shelf shelf = shelfRepository.findById(shelfId).orElseThrow();
+        // 선반과 상호작용할 위치 찾기
+        int[] pick = new int[]{shelf.getX(), shelf.getY()};
+        int[] pickField = new int[2];
+        if (pick[1] >= 1 && roadHash.containsKey(field[pick[0]][pick[1] -1])){
+            pickField = new int[]{pick[0], pick[1] - 1};
+        } else if (pick[1] + 1 < field[0].length && roadHash.containsKey(field[pick[0]][pick[1] + 1])) {
+            pickField = new int[]{pick[0], pick[1] + 1};
+        }
+        Payload payload = new Payload();
+        int[] end = new int[]{0,pickField[1]};
+        dfs(start, pickField, end, turn, pick, shelfId, payload);
     }
 
     public static CalculateResultDto check(int minCost, HashMap<Long, ArrayDeque<CandidateDto>> selected) throws Exception{
@@ -545,7 +567,7 @@ public class RobotServiceImpl implements RobotService{
         char[] unPressured= sb.toString().toCharArray();
         int j = 1;
         pressured.append(unPressured[0]);
-        pressured.append("1 "); //같은 명령이 10번 되면 안된다 귀찮아요
+        pressured.append("1 ");                            //같은 명령이 10번 되면 안된다 귀찮아요
         while (j < unPressured.length){
             if (pressured.charAt(pressured.length() - 3) != unPressured[j]){
                 pressured.append(unPressured[j]);
@@ -563,18 +585,22 @@ public class RobotServiceImpl implements RobotService{
             pressured.append(cnt);
             pressured.append(" ");
         }
-
         log.info(pressured.toString());
-        PickerRes pickerRes = PickerRes.builder()
-                .robotId(robot.getRobotId())
-                .shelfId(shelfId)
-                .orderId(payload.getId())
-                .pickerId("1")                             //redis로 받는 로직 추가
-                .turn(fastest + visit[end[0]][end[1]])  //도착 시간
-                .build();
+
+        if(payload.getId() != null){       //반환 로직이 아니면 worker-service로 결과 전송
+            PickerRes pickerRes = PickerRes.builder()
+                    .robotId(robot.getRobotId())
+                    .shelfId(shelfId)
+                    .orderId(payload.getId())
+                    .pickerId("1")                              //redis로 받는 로직 추가
+                    .turn(fastest + visit[end[0]][end[1]])      //도착 시간
+                    .build();
+            kafkaProducer.pickerRes(pickerRes);
+        }
 
         robotHandler.sendCommand(robot.getRobotId(), pressured.toString(), robot.getPositionX(), robot.getPositionY(), shelfId, turn,fastest);//해당 로봇에게 메세지 전달
 
     }
+
 }
 
