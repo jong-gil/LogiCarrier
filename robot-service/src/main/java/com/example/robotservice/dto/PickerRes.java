@@ -14,6 +14,6 @@ public class PickerRes {
     private long shelfId;
     private String robotId;
     private long turn;
-    private ArrayList<ResponseItem> responseItemList;
+    private ArrayList<ResponseItem> responseItemList;       //선반에서  뽑는 아이템
 
 }

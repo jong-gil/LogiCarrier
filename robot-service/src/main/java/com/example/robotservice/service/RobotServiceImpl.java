@@ -3,10 +3,7 @@ package com.example.robotservice.service;
 import com.example.robotservice.Repoistory.PickerRepository;
 import com.example.robotservice.Repoistory.ShelfRepository;
 import com.example.robotservice.Repoistory.ShelfStockRepository;
-import com.example.robotservice.dto.CalculateResultDto;
-import com.example.robotservice.dto.CandidateDto;
-import com.example.robotservice.dto.Pick;
-import com.example.robotservice.dto.ResponseItem;
+import com.example.robotservice.dto.*;
 import com.example.robotservice.handler.RobotHandler;
 import com.example.robotservice.entity.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +14,7 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -30,6 +28,7 @@ public class RobotServiceImpl implements RobotService{
     private final PickerRepository pickerRepository;
     private final ShelfStockRepository stockRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, String> turnRedisTemplate;
     private final RobotHandler robotHandler;
     private final String[][] field = new String[9][13];
     private final HashMap<String, Road> roadHash = new HashMap<>();
@@ -49,7 +48,7 @@ public class RobotServiceImpl implements RobotService{
     };
 
     @Override
-    public Boolean find(Payload payload) throws Exception {
+    public Boolean find(com.example.robotservice.entity.Payload payload) throws Exception {
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 13; j++) {
                 field[i][j] = "";
@@ -119,6 +118,10 @@ public class RobotServiceImpl implements RobotService{
         roadHash.get("16").isCorner = true;
         roadHash.get("18").isCorner = true;
         roadHash.get("30").isCorner = true;
+
+        ValueOperations<String, String> valueOperations = turnRedisTemplate.opsForValue();
+        ObjectMapper objectMapper = new ObjectMapper();
+        Long turn = objectMapper.readValue(valueOperations.get("turn"),Long.class);
 
         List<CandidateDto> candidateDtoList = new ArrayList<>();
         HashMap<Long, ArrayDeque<CandidateDto>> selected = new HashMap<>();  //stockId별로 고른 stock
@@ -267,7 +270,7 @@ public class RobotServiceImpl implements RobotService{
 
 
 
-                    send(new int[] {x, y}, new int[] {endX, endY}, 20L, candidateDto.getId()); // 최단거리, 턴 계산
+                    send(new int[] {x, y}, new int[] {endX, endY}, 20L, candidateDto.getId(), payload); // 최단거리, 턴 계산
                     break;
                 }
             }
@@ -314,7 +317,7 @@ public class RobotServiceImpl implements RobotService{
         return  new CalculateResultDto(distance, minCost, ischange, pickHashMap);
     }
 
-    public void send(int[] pick, int[] end, long turn, long shelfId) throws Exception {
+    public void send(int[] pick, int[] end, long turn, long shelfId, Payload payload) throws Exception {
         // 선반과 상호작용할 위치 찾기
         int[] pickField = new int[2];
         int[] start = new int[2];
@@ -324,9 +327,9 @@ public class RobotServiceImpl implements RobotService{
             pickField = new int[]{pick[0], pick[1] + 1};
         }
         start = new int[]{0, pickField[1]};
-        dfs(start, pickField, end, turn, pick, shelfId);
+        dfs(start, pickField, end, turn, pick, shelfId, payload);
     }
-    public void dfs(int[] start, int[] pick,  int[]end, long turn, int[] shelf, long shelfId) throws Exception{
+    public void dfs(int[] start, int[] pick,  int[]end, long turn, int[] shelf, long shelfId, Payload payload) throws Exception{
         long[][] visit = new long[9][13];
         Stack<int[]> ans = new Stack<>();
         for (int i = 0; i < 9; i++) {
@@ -561,8 +564,17 @@ public class RobotServiceImpl implements RobotService{
             pressured.append(" ");
         }
 
-        robotHandler.sendCommand(robot.getRobotId(), pressured.toString(), robot.getPositionX(), robot.getPositionY(), shelfId, turn,fastest);//해당 로봇에게 메세지 전달
         log.info(pressured.toString());
+        PickerRes pickerRes = PickerRes.builder()
+                .robotId(robot.getRobotId())
+                .shelfId(shelfId)
+                .orderId(payload.getId())
+                .pickerId("1")                             //redis로 받는 로직 추가
+                .turn(fastest + visit[end[0]][end[1]])  //도착 시간
+                .build();
+
+        robotHandler.sendCommand(robot.getRobotId(), pressured.toString(), robot.getPositionX(), robot.getPositionY(), shelfId, turn,fastest);//해당 로봇에게 메세지 전달
+
     }
 }
 
