@@ -359,6 +359,10 @@ public class RobotServiceImpl implements RobotService{
                 visit[i][j] = Long.MAX_VALUE;
             }
         }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        HashOperations<String, Object, Object> hashOperations = redisTemplate.opsForHash();
+
         //결과
         ArrayList<String> ansKeyList = new ArrayList<>();
         ArrayList<Long> ansSizeList = new ArrayList<>();
@@ -518,21 +522,22 @@ public class RobotServiceImpl implements RobotService{
                 }
             }
         }
-        //출발지에 대기중인 로봇 스택 읽기
-        ObjectMapper objectMapper = new ObjectMapper();
-        HashOperations<String, Object, Object> hashOperations = redisTemplate.opsForHash();
-        RobotStack robotStack = objectMapper.
-                readValue((String)hashOperations.get("robotStack", field[start[0]][start[1]]), RobotStack.class);
 
-        Stack<String> robotIdStack = robotStack.getRobotIdStack();
-        String id = robotIdStack.pop();
-        Robot robot = objectMapper.readValue((String)hashOperations.get("robot", id), Robot.class);
+        StringBuilder sb = new StringBuilder();         //경로 출력
+        Robot robot = new Robot();
 
-        //경로 출력
-        StringBuilder sb = new StringBuilder();
-        //stack의 최대 길이는 5
-        for (int k = 0; k < 5 - robotIdStack.size() - 1; k++){
-            sb.append('U');
+        if(payload.getId() != null) {                   //출발지에 대기중인 로봇 스택 읽기
+            RobotStack robotStack = objectMapper.
+                    readValue((String) hashOperations.get("robotStack", field[start[0]][start[1]]), RobotStack.class);
+
+            Stack<String> robotIdStack = robotStack.getRobotIdStack();
+            String id = robotIdStack.pop();
+            robot = objectMapper.readValue((String) hashOperations.get("robot", id), Robot.class);
+
+            //stack의 최대 길이는 5
+            for (int k = 0; k < 5 - robotIdStack.size() - 1; k++) {
+                sb.append('U');
+            }
         }
         int direction = ansStack.get(0)[2];
         int i = 1;
@@ -562,6 +567,17 @@ public class RobotServiceImpl implements RobotService{
             }
             i++;
         }
+        if(payload.getId() == null){                        //반환 로직이면 스택 길이 만큼 더 들어가고 180도 회전
+            RobotStack robotStack = objectMapper.
+                    readValue((String) hashOperations.get("robotStack", field[start[0]][start[1]]), RobotStack.class);
+
+            Stack<String> robotIdStack = robotStack.getRobotIdStack();
+            //stack의 최대 길이는 5
+            for (int k = 0; k < 5 - robotIdStack.size() - 1; k++) {
+                sb.append('U');
+            }
+            sb.append("RR");
+        }
         //압축
         StringBuilder pressured = new StringBuilder();
         char[] unPressured= sb.toString().toCharArray();
@@ -587,15 +603,14 @@ public class RobotServiceImpl implements RobotService{
         }
         log.info(pressured.toString());
 
-        if(payload.getId() != null){       //반환 로직이 아니면 worker-service로 결과 전송
+        if(payload.getId() != null) {                            //반환 로직이 아니면 worker-service로 결과 전송
             PickerRes pickerRes = PickerRes.builder()
                     .robotId(robot.getRobotId())
                     .shelfId(shelfId)
                     .orderId(payload.getId())
-                    .pickerId("1")                              //redis로 받는 로직 추가
+                    .pickerId("1")                              //redis로 받는 로직 추가 필요!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     .turn(fastest + visit[end[0]][end[1]])      //도착 시간
                     .build();
-            kafkaProducer.pickerRes(pickerRes);
         }
 
         robotHandler.sendCommand(robot.getRobotId(), pressured.toString(), robot.getPositionX(), robot.getPositionY(), shelfId, turn,fastest);//해당 로봇에게 메세지 전달
