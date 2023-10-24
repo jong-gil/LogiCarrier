@@ -13,6 +13,7 @@ import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("robot-service")
 @RequiredArgsConstructor
+@EnableScheduling
+@Slf4j
 public class RobotController {
     private final KafkaProducer kafkaProducer;
     private final RedisTemplate<String, String> redisTemplate;
@@ -41,7 +44,7 @@ public class RobotController {
         turn ++;
 
         valueOperations.set("turn", objectMapper.writeValueAsString(turn));
-
+        log.info("turn increase!"+ turn.toString());
         return true;
     }
 

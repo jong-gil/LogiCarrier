@@ -1,5 +1,6 @@
 package com.example.robotservice;
 
+import com.example.robotservice.Repoistory.ShelfRepository;
 import com.example.robotservice.entity.Person;
 import com.example.robotservice.Repoistory.PersonRedisRepository;
 import com.example.robotservice.entity.Robot;
@@ -14,9 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
 
 @SpringBootTest
 public class RedisRepositoryTest {
@@ -103,7 +102,6 @@ public class RedisRepositoryTest {
         //redisTemplate.delete("robot");
         //redisTemplate.delete("robotStack");
     }
-
 
 
 }
