@@ -2,9 +2,8 @@ package com.example.robotservice.handler;
 
 import com.example.robotservice.dto.MessageReceiveDto;
 import com.example.robotservice.dto.MessageSendDto;
-import com.example.robotservice.entity.Payload;
 import com.example.robotservice.entity.Robot;
-import com.example.robotservice.service.RobotService;
+//import com.example.robotservice.service.RobotService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +23,7 @@ public class RobotHandler implements WebSocketHandler {
     private final static HashMap<String, WebSocketSession> sessionMap = new HashMap<>();
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedisTemplate<String, String> stringRedisTemplate;
-    private final RobotService robotService;
+    //private final RobotService robotService;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
@@ -57,7 +56,7 @@ public class RobotHandler implements WebSocketHandler {
         if(setOperations.isMember("readyToGo", sb.toString())){
             int[] start = new int[]{robot.getPositionX(), robot.getPositionY()};
             Long shelfId = robot.getShelfId();
-            robotService.receive(start, shelfId);
+            //robotService.receive(start, shelfId);
 
         }
 

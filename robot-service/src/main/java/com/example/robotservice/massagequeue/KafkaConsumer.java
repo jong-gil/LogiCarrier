@@ -43,6 +43,8 @@ public class KafkaConsumer {
     public void targetInfo(String message) throws IOException, Exception {
         ListOperations<String, String> listOperations = redisTemplate.opsForList();
         ObjectMapper objectMapper = new ObjectMapper();
+        Payload payload = objectMapper.readValue(message, Payload.class);
+        robotService.find(payload);
         // 주문 정보 받아서 덱에 저장
         listOperations.rightPush("orderDeque", message);
 

@@ -34,6 +34,8 @@ public class RobotServiceImpl implements RobotService{
     private final String[][] field = new String[9][13];
     private final HashMap<String, Road> roadHash = new HashMap<>();
     private final KafkaProducer kafkaProducer;
+    private Set<String> isUsed;
+
     @Data
     public static class Road {
         private ArrayList<long[]> schedule;
@@ -49,7 +51,7 @@ public class RobotServiceImpl implements RobotService{
     };
 
     @Override
-    public Boolean find(com.example.robotservice.entity.Payload payload) throws Exception {
+    public Boolean find(Payload payload) throws Exception {
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 13; j++) {
                 field[i][j] = "";
@@ -277,6 +279,17 @@ public class RobotServiceImpl implements RobotService{
                 }
             }
         }
+        for(String key: isUsed){                                                                //schedule 정리
+            Road road = roadHash.get(key);
+            long biggest = 0L;
+            for (long[] schedule : road.getSchedule()){
+                if (schedule[0] > biggest) biggest = schedule[0];
+            }
+            ArrayList<long[]> newSchedule = new ArrayList<>();
+            newSchedule.add(new long[]{0L, biggest});
+            road.setSchedule(newSchedule);
+        }
+        isUsed = new HashSet<>();
 
         return true;
     }
@@ -517,10 +530,12 @@ public class RobotServiceImpl implements RobotService{
             }else { //역방향일시
                 if (roadHash.get(key).isCorner){
                     roadHash.get(key).schedule.add(new long[] {time + fastest - 1, time + size - 1 + fastest - 1});
+                    System.out.println("asd");
                 }else{
                         roadHash.get(key).schedule.add(new long[] {time - size + fastest - 1, time + size + fastest - 1});
                 }
             }
+            isUsed.add(key); //업데이트한 키 추가 -> 스케줄 정리하기 위해 -> 주문이 섞이는것 방지
         }
 
         StringBuilder sb = new StringBuilder();         //경로 출력

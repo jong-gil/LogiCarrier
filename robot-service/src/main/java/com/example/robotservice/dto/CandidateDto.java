@@ -1,6 +1,5 @@
 package com.example.robotservice.dto;
 
-import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigInteger;

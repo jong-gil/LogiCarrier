@@ -1,7 +1,6 @@
 package com.example.robotservice.massagequeue;
 
 
-import com.example.robotservice.dto.CalculateResultDto;
 import com.example.robotservice.dto.PickerRes;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

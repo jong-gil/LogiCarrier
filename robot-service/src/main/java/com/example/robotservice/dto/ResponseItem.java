@@ -1,7 +1,6 @@
 package com.example.robotservice.dto;
 
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 public class ResponseItem {
