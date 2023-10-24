@@ -6,9 +6,7 @@ import com.example.robotservice.Repoistory.ShelfStockRepository;
 import com.example.robotservice.dto.*;
 import com.example.robotservice.handler.RobotHandler;
 import com.example.robotservice.entity.*;
-import com.example.robotservice.massagequeue.KafkaProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -33,17 +31,8 @@ public class RobotServiceImpl implements RobotService{
     private final RobotHandler robotHandler;
     private final String[][] field = new String[9][13];
     private final HashMap<String, Road> roadHash = new HashMap<>();
-    private final KafkaProducer kafkaProducer;
     private Set<String> isUsed;
 
-    @Data
-    public static class Road {
-        private ArrayList<long[]> schedule;
-        private boolean isCorner;
-        public Road(){
-            this.schedule = new ArrayList<>();
-        }
-    }
 
     public static int[][] deltas  = {
             {1, 0, -1, 0},
@@ -107,20 +96,23 @@ public class RobotServiceImpl implements RobotService{
         field[7][11] = "29";
         field[8][11] = "30";
         for(int i = 0; i< 33; i++){
-            roadHash.put(String.valueOf(i), new Road());
+            Road road = new Road();
+            road.setCorner(false);
+            road.setSchedule(new ArrayList<>());
+            roadHash.put(String.valueOf(i), road);
         }
-        roadHash.get("0").isCorner = true;
-        roadHash.get("1").isCorner = true;
-        roadHash.get("2").isCorner = true;
-        roadHash.get("24").isCorner = true;
-        roadHash.get("6").isCorner = true;
-        roadHash.get("8").isCorner = true;
-        roadHash.get("10").isCorner = true;
-        roadHash.get("28").isCorner = true;
-        roadHash.get("14").isCorner = true;
-        roadHash.get("16").isCorner = true;
-        roadHash.get("18").isCorner = true;
-        roadHash.get("30").isCorner = true;
+        roadHash.get("0").setCorner(true);
+        roadHash.get("1").setCorner(true);
+        roadHash.get("2").setCorner(true);
+        roadHash.get("24").setCorner(true);
+        roadHash.get("6").setCorner(true);
+        roadHash.get("8").setCorner(true);
+        roadHash.get("10").setCorner(true);
+        roadHash.get("28").setCorner(true);
+        roadHash.get("14").setCorner(true);
+        roadHash.get("16").setCorner(true);
+        roadHash.get("18").setCorner(true);
+        roadHash.get("30").setCorner(true);
 
         ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
 
@@ -409,7 +401,7 @@ public class RobotServiceImpl implements RobotService{
                     int ny = stack.get(i)[1];
                     int nDirection = stack.get(i)[2];
                     keyList.add(field[nx][ny]);
-                    if (nDirection %2 == 0 && !roadHash.get(keyList.get(keyList.size() - 1)).isCorner) {
+                    if (nDirection %2 == 0 && !roadHash.get(keyList.get(keyList.size() - 1)).isCorner()) {
                         directList.add(true);
                     } else {
                         directList.add(false);
@@ -434,7 +426,7 @@ public class RobotServiceImpl implements RobotService{
                             sizeList.set(sizeList.size() - 1,endTime);
                         }
                     }
-                    if(roadHash.get(keyList.get(keyList.size() - 1)).isCorner){
+                    if(roadHash.get(keyList.get(keyList.size() - 1)).isCorner()){
                         startList.add(startTime - sizeList.get(sizeList.size() - 1) + 1);
                     }else {
                         startList.add(startTime);
@@ -448,7 +440,7 @@ public class RobotServiceImpl implements RobotService{
                 for (int j = keyList.size() - 1; j >= 0; j--) {
                     long size = sizeList.get(j);
                     String key = keyList.get(j);
-                    ArrayList<long[]> schedule = roadHash.get(key).schedule;
+                    ArrayList<long[]> schedule = roadHash.get(key).getSchedule();
 
                     //이전 값 갱신
                     for (int k = 0; k < disableTime.size(); k++) {
@@ -459,7 +451,7 @@ public class RobotServiceImpl implements RobotService{
                     if (directList.get(j)) {//정방향이면
                         disableTime.addAll(schedule);
                     }else { //역방향일시
-                        if (roadHash.get(key).isCorner){
+                        if (roadHash.get(key).isCorner()){
                             for (long[] disable : schedule) {
                                 disableTime.add(new long[] {disable[0] - size + 1, disable[1]});
                             }
@@ -526,13 +518,13 @@ public class RobotServiceImpl implements RobotService{
             String key = ansKeyList.get(j);
             //불가능한 시간 추가
             if (ansDirectList.get(j) && !field[pick[0]][pick[1]].equals(key) ) {//정방향고 선반을 픽업하지 않으면
-                roadHash.get(key).schedule.add(new long[]{time + fastest - 1, time + fastest - 1});
+                roadHash.get(key).getSchedule().add(new long[]{time + fastest - 1, time + fastest - 1});
             }else { //역방향일시
-                if (roadHash.get(key).isCorner){
-                    roadHash.get(key).schedule.add(new long[] {time + fastest - 1, time + size - 1 + fastest - 1});
+                if (roadHash.get(key).isCorner()){
+                    roadHash.get(key).getSchedule().add(new long[] {time + fastest - 1, time + size - 1 + fastest - 1});
                     System.out.println("asd");
                 }else{
-                        roadHash.get(key).schedule.add(new long[] {time - size + fastest - 1, time + size + fastest - 1});
+                        roadHash.get(key).getSchedule().add(new long[] {time - size + fastest - 1, time + size + fastest - 1});
                 }
             }
             isUsed.add(key); //업데이트한 키 추가 -> 스케줄 정리하기 위해 -> 주문이 섞이는것 방지
