@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jdk.jfr.DataAmount;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
 
 import javax.persistence.*;
@@ -14,6 +16,7 @@ import static java.time.LocalDateTime.now;
 
 @Data
 @Entity
+@Builder
 @Table(name = "orders")
 public class OrderEntity {
     @Id

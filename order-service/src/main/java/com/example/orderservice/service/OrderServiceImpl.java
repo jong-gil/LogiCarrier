@@ -1,21 +1,27 @@
 package com.example.orderservice.service;
 
 import com.example.orderservice.dto.OrderDto;
+import com.example.orderservice.dto.OrderReq;
 import com.example.orderservice.dto.ResponseItem;
 import com.example.orderservice.jpa.*;
 import com.example.orderservice.massagequeue.OrderProducer;
 import lombok.RequiredArgsConstructor;
+import net.bytebuddy.asm.Advice;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
@@ -61,5 +67,38 @@ public class OrderServiceImpl implements OrderService {
 
 
         return orderDtoList;
+    }
+
+    @Override
+    public OrderDto createOrderManually(OrderReq orderReq) {
+        ModelMapper mapper = new ModelMapper();
+        mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
+
+        ItemEntity itemEntity = itemRepository.findById(orderReq.getItemId()).orElseThrow();
+        if(orderReq.getStatus() != 0 || itemEntity.getQty() >= orderReq.getQty()){
+            OrderEntity orderEntity = new OrderEntity().builder()
+                    .createdTime(LocalDateTime.now().toString())
+                    .status(orderReq.getStatus())
+                    .build();
+            orderRepository.save(orderEntity);
+            OrderDto orderDto = mapper.map(orderEntity, OrderDto.class);
+
+            return orderDto;
+        }
+        Exception e = new Exception("생성 불가능한 주문");
+        e.printStackTrace();
+        return null;
+    }
+
+    @Override
+    public OrderDto get(long id) {
+        ModelMapper mapper = new ModelMapper();
+        mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
+
+        OrderEntity orderEntity = orderRepository.findById(id).orElseThrow();
+
+        OrderDto orderDto = mapper.map(orderEntity, OrderDto.class);
+
+        return orderDto;
     }
 }
