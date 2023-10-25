@@ -1,14 +1,12 @@
 package com.example.orderservice.controller;
 
 import com.example.orderservice.dto.OrderDto;
-import com.example.orderservice.dto.RequestOrder;
+import com.example.orderservice.dto.OrderReq;
 import com.example.orderservice.dto.ResponseOrder;
-import com.example.orderservice.jpa.ItemEntity;
 import com.example.orderservice.massagequeue.OrderProducer;
 import com.example.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.core.env.Environment;
@@ -52,4 +50,18 @@ public class OrderController {
         log.info("After added orders data");
         return ResponseEntity.status(HttpStatus.CREATED).body(responseOrderList);
     }
+    @PostMapping("/orders/manually")
+    public ResponseEntity<OrderDto> createOrderManually(OrderReq orderReq) {
+        log.info("Before add orders data manually");
+        OrderDto orderDto = orderService.createOrderManually(orderReq);
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderDto);
+    }
+
+    @GetMapping("/orders/{id}")
+    public ResponseEntity<OrderDto> getOrderManually(@PathVariable("id") long id) {
+        log.info("read order info: " + id);
+        OrderDto orderDto = orderService.get(id);
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderDto);
+    }
+
 }

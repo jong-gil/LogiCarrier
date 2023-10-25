@@ -75,7 +75,7 @@ public class KafkaConsumer {
         OrderEntity orderEntity = orderRepository.findTopByStatusOrderByCreatedTime(0).orElseThrow(NoSuchElementException::new);
         ModelMapper mapper = new ModelMapper();
         OrderDto orderDto = mapper.map(orderEntity, OrderDto.class);
-        System.out.println(orderDto.getId());
+
         List<ItemEntity> itemEntityList= itemRepository.findAllByOrderEntity(orderEntity);
         List<ResponseItem> responseItemList = new ArrayList<>();
         for(ItemEntity itemEntity : itemEntityList){
@@ -97,6 +97,23 @@ public class KafkaConsumer {
                 .name(stockEntity.getName())
                 .build();
         kafkaTemplate.send("stockInfo", stockInfoDto.toString());
+        log.info(String.format("Consumed message : %s", message));
+    }
+
+    @KafkaListener(topics = "nextPush")
+    public void nextPush(String message) throws IOException {
+        OrderEntity orderEntity = orderRepository.findTopByStatusOrderByCreatedTime(3).orElseThrow(NoSuchElementException::new);
+        ModelMapper mapper = new ModelMapper();
+        OrderDto orderDto = mapper.map(orderEntity, OrderDto.class);
+
+        List<ItemEntity> itemEntityList= itemRepository.findAllByOrderEntity(orderEntity);
+        List<ResponseItem> responseItemList = new ArrayList<>();
+        for(ItemEntity itemEntity : itemEntityList){
+            ResponseItem responseItem = mapper.map(itemEntity, ResponseItem.class);
+            responseItemList.add(responseItem);
+        }
+        orderDto.setResponseItemList(responseItemList);
+        orderProducer.send("pushInfo", orderDto);
         log.info(String.format("Consumed message : %s", message));
     }
 }
