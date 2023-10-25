@@ -3,7 +3,7 @@ package com.example.robotservice.massagequeue;
 
 import com.example.robotservice.Repoistory.ShelfRepository;
 import com.example.robotservice.Repoistory.ShelfStockRepository;
-import com.example.robotservice.dto.PickerReq;
+import com.example.robotservice.dto.WorkerReq;
 import com.example.robotservice.dto.ResponseItem;
 import com.example.robotservice.entity.Payload;
 import com.example.robotservice.entity.Robot;
@@ -50,6 +50,19 @@ public class KafkaConsumer {
 
         log.info(String.format("Consumed message : %s", message));
     }
+
+    @KafkaListener(topics = "pushInfo")           //푸시하는 오더 덱에 추가
+    public void pushInfo(String message) throws IOException, Exception {
+        ListOperations<String, String> listOperations = redisTemplate.opsForList();
+        ObjectMapper objectMapper = new ObjectMapper();
+        Payload payload = objectMapper.readValue(message, Payload.class);
+        robotService.find(payload);
+        // 주문 정보 받아서 덱에 저장
+        listOperations.rightPush("pushDeque", message);
+
+        log.info(String.format("Consumed message : %s", message));
+    }
+
     @Transactional
     @KafkaListener(topics = "pickerReq")            //worker-service로 부터  shelf에서 특정 item 뺀 정보를 받음
     public void pickerReq(String message) throws IOException, Exception {
@@ -60,11 +73,11 @@ public class KafkaConsumer {
 
 
         Long turn = objectMapper.readValue(valueOperations.get("turn"),Long.class);
-        PickerReq pickerReq = objectMapper.readValue(message, PickerReq.class);
-        String robotId = pickerReq.getRobotId();
-        long shelfId = pickerReq.getShelfId();
+        WorkerReq workerReq = objectMapper.readValue(message, WorkerReq.class);
+        String robotId = workerReq.getRobotId();
+        long shelfId = workerReq.getShelfId();
         Shelf shelf = shelfRepository.findById(shelfId).orElseThrow();
-        ArrayList<ResponseItem> responseItemList = pickerReq.getResponseItemList();
+        ArrayList<ResponseItem> responseItemList = workerReq.getResponseItemList();
         for (ResponseItem responseItem : responseItemList){
             long itemId = responseItem.getId();
             int qty = responseItem.getQty();
@@ -79,7 +92,7 @@ public class KafkaConsumer {
         //헤당 로봇에게 앞으로 한칸 요청
         Robot robot = objectMapper.readValue((String)hashOperations.get("robot", robotId), Robot.class);
         robotHandler.sendCommand(robot.getRobotId(), "U", robot.getPositionX(), robot.getPositionY(), shelfId, turn,turn+1);//해당 로봇에게 메세지 전달 다음턴에 출발
-        if(pickerReq.isOrderStatus()){      //한개의 주문이 처리됬다면 새로운 주문 경로계획
+        if(workerReq.isOrderStatus()){      //한개의 주문이 처리됬다면 새로운 주문 경로계획
             System.out.println("로직 추가 필요");
         }
 

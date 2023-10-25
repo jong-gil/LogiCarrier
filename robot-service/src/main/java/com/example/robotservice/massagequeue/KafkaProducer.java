@@ -1,7 +1,8 @@
 package com.example.robotservice.massagequeue;
 
 
-import com.example.robotservice.dto.PickerRes;
+import com.example.robotservice.dto.WorkerReq;
+import com.example.robotservice.dto.WorkerRes;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -16,12 +17,12 @@ import org.springframework.stereotype.Service;
 public class KafkaProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
 
-    public void pickerRes(PickerRes pickerRes) {
+    public void pickerRes(WorkerRes workerRes) {
 
         ObjectMapper mapper = new ObjectMapper();
         String jsonInString = "";
         try {
-            jsonInString = mapper.writeValueAsString(pickerRes);
+            jsonInString = mapper.writeValueAsString(workerRes);
         } catch (JsonProcessingException ex) {
             ex.printStackTrace();
         }
@@ -33,5 +34,9 @@ public class KafkaProducer {
     public void requestOrderInfo() {
         kafkaTemplate.send("nextOrders", "from robot-service!");
         log.info("OrderInfo Requested!");
+    }
+    public void requestPushInfo() {
+        kafkaTemplate.send("nextPush", "from robot-service!");
+        log.info("push Info Requested!");
     }
 }

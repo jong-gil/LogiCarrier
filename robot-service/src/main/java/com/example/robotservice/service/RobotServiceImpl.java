@@ -40,6 +40,25 @@ public class RobotServiceImpl implements RobotService{
     };
 
     @Override
+    public Boolean findSpace(Payload payload) throws Exception {
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        Long turn = objectMapper.readValue(valueOperations.get("turn"),Long.class);
+
+        ArrayList<ResponseItem> responseItemList = payload.getResponseItemList();
+        for(ResponseItem responseItem: responseItemList){
+            long itemId = responseItem.getId();
+            int qty = responseItem.getQty();
+
+            while (qty >= 0){
+                break;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public Boolean find(Payload payload) throws Exception {
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 13; j++) {
@@ -611,7 +630,7 @@ public class RobotServiceImpl implements RobotService{
         log.info(pressured.toString());
 
         if(payload.getId() != null) {                            //반환 로직이 아니면 worker-service로 결과 전송
-            PickerRes pickerRes = PickerRes.builder()
+            WorkerRes workerRes = WorkerRes.builder()
                     .robotId(robot.getRobotId())
                     .shelfId(shelfId)
                     .orderId(payload.getId())
