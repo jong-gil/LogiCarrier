@@ -27,7 +27,8 @@ public class WorkerController {
     }
 
     @PostMapping("/workerBit/{workerId}")
-    public void setWorkerBit(@PathVariable("workerId") Long id) {
-
+    public String setWorkerBit(@PathVariable("workerId") Long id) {
+        return redisService.setWorkerBit(id);
     }
+
 }

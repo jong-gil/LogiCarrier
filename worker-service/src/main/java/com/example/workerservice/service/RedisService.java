@@ -30,11 +30,22 @@ public class RedisService {
         redisBit.set("workerBit", String.valueOf(workerStr));
     }
 
-    /*public void setWorkerBit(Long workerId) {
-        ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
-        StringBuffer workerStr = new StringBuffer();
+    public String setWorkerBit(Long workerId) {
+        if (workerId < 0 || workerId > 5) {
+            ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
+            String workerBit = redisBit.get("workerBit");
+            assert workerBit != null;
 
-    }*/
+            StringBuilder workerStr = new StringBuilder(workerBit);
+            if (workerStr.charAt(workerId.intValue()) == '0') {
+                workerStr.setCharAt(workerId.intValue(), '1');
+            } workerStr.setCharAt(workerId.intValue(), '0');
+            return "Worker Position {workerId} has Changed";
+        }
+        return "WRONG workerId";
+    }
+
+
 
     public void setInitialProgressBit() {
         ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
@@ -47,10 +58,10 @@ public class RedisService {
         }
         redisBit.set("workerBit", String.valueOf(progressStr));
     }
-
     @Transactional(readOnly = true)
     public String getBit(String key) {
         ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
         return redisBit.get(key);
     }
 }
+
