@@ -34,13 +34,9 @@ public class RedisService {
         if (workerId < 0 || workerId > 5) {
             ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
             String workerBit = redisBit.get("workerBit");
-            assert workerBit != null;
-
-            StringBuilder workerStr = new StringBuilder(workerBit);
-            if (workerStr.charAt(workerId.intValue()) == '0') {
-                workerStr.setCharAt(workerId.intValue(), '1');
-            } workerStr.setCharAt(workerId.intValue(), '0');
-            return "Worker Position {workerId} has Changed";
+            String changedWorkerBit = getChangedString(workerId, workerBit);
+            redisBit.set("workerBit", changedWorkerBit);
+            return "Worker Position has Changed";
         }
         return "WRONG workerId";
     }
@@ -48,14 +44,21 @@ public class RedisService {
     public String setProgressBit(Long workerId) {
         ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
         String progressBit = redisBit.get("progressBit");
-        assert progressBit != null;
+        String changedProgressBit = getChangedString(workerId, progressBit);
+        redisBit.set("progressBit", changedProgressBit);
+        return "Worker's Progress status has Changed";
 
-        StringBuilder progressStr = new StringBuilder(progressBit);
-        if (progressStr.charAt(workerId.intValue()) == '0') {
-            progressStr.setCharAt(workerId.intValue(), '1');
-        } progressStr.setCharAt(workerId.intValue(), '0');
-        return "Worker Position {workerId} has Changed";
-        
+    }
+
+    private String getChangedString(Long workerId, String redisBit) {
+        assert redisBit != null;
+
+        StringBuilder redisBitStr = new StringBuilder(redisBit);
+        if (redisBitStr.charAt(workerId.intValue()) == '0') {
+            redisBitStr.setCharAt(workerId.intValue(), '1');
+        }
+        redisBitStr.setCharAt(workerId.intValue(), '0');
+        return redisBitStr.toString();
     }
 
     public void setInitialProgressBit() {
