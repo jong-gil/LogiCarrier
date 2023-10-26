@@ -45,7 +45,18 @@ public class RedisService {
         return "WRONG workerId";
     }
 
+    public String setProgressBit(Long workerId) {
+        ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
+        String progressBit = redisBit.get("progressBit");
+        assert progressBit != null;
 
+        StringBuilder progressStr = new StringBuilder(progressBit);
+        if (progressStr.charAt(workerId.intValue()) == '0') {
+            progressStr.setCharAt(workerId.intValue(), '1');
+        } progressStr.setCharAt(workerId.intValue(), '0');
+        return "Worker Position {workerId} has Changed";
+        
+    }
 
     public void setInitialProgressBit() {
         ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
