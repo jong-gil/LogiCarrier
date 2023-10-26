@@ -100,6 +100,7 @@ public class WorkerServiceImpl implements WorkerService{
             PickerReq pickedItem = PickerReq.builder()
                     .robotId(targetPayload.getRobotId())
                     .shelfId(targetPayload.getShelfId())
+                    .responseItemList(itemList)
                     .build();
             kafkaProducer.pickedItem("PickerToRobot", pickedItem);
             return itemId + "is Picked";
@@ -122,9 +123,5 @@ public class WorkerServiceImpl implements WorkerService{
             return itemId + "is Picked"
                     + "%n order no." + targetPayload.getOrderId() + "is Completed";
         }
-    }
-
-    private String orderCompleted(PickerRes targetPayload) {
-        return "";
     }
 }
