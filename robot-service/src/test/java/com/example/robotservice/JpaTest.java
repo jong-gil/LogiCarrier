@@ -14,7 +14,7 @@ public class JpaTest {
     private ShelfRepository shelfRepository;
     @Test
     public void findSpacedShelf(){
-        List<Object[]> objects = shelfRepository.findSpacedShelf(0);
+        List<Object[]> objects = shelfRepository.findSpacedShelf();
         for (Object obj[] : objects) {
             SpaceDto spaceDto = new SpaceDto().fromObj(obj);
             System.out.println(spaceDto);

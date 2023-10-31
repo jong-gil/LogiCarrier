@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 public class KafkaProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
 
-    public void pickerRes(WorkerRes workerRes) {
+    public void toWorker(WorkerRes workerRes, String topic) {
 
         ObjectMapper mapper = new ObjectMapper();
         String jsonInString = "";
@@ -27,7 +27,7 @@ public class KafkaProducer {
             ex.printStackTrace();
         }
 
-        kafkaTemplate.send("pickerRes", jsonInString);
+        kafkaTemplate.send(topic, jsonInString);
         log.info("Robot-service to worker-service: " + jsonInString);
     }
 

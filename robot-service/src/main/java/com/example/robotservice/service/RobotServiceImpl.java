@@ -6,6 +6,7 @@ import com.example.robotservice.Repoistory.ShelfStockRepository;
 import com.example.robotservice.dto.*;
 import com.example.robotservice.handler.RobotHandler;
 import com.example.robotservice.entity.*;
+import com.example.robotservice.massagequeue.KafkaProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,10 +30,10 @@ public class RobotServiceImpl implements RobotService{
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedisTemplate<String, String> stringRedisTemplate;
     private final RobotHandler robotHandler;
+    private final KafkaProducer kafkaProducer;
     private final String[][] field = new String[9][13];
     private final HashMap<String, Road> roadHash = new HashMap<>();
     private Set<String> isUsed;
-
 
     public static int[][] deltas  = {
             {1, 0, -1, 0},
@@ -41,22 +42,254 @@ public class RobotServiceImpl implements RobotService{
 
     @Override
     public Boolean findSpace(Payload payload) throws Exception {
+        for(ResponseItem responseItem : payload.getResponseItemList()){
+            responseItem.setId(0L);                                     //빈공간 찾기
+        }
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 13; j++) {
+                field[i][j] = "";
+            }
+        }
+        //field 초기값
+        field[0][2] = "0";
+        field[0][5] = "1";
+        field[0][8] = "2";
+        field[1][2] = "3";
+        field[2][2] = "3";
+        field[3][2] = "3";
+        field[4][2] = "6";
+        field[5][2] = "11";
+        field[6][2] = "11";
+        field[7][2] = "11";
+        field[8][2] = "14";
+        field[1][5] = "4";
+        field[2][5] = "4";
+        field[3][5] = "4";
+        field[4][5] = "8";
+        field[5][5] = "12";
+        field[6][5] = "12";
+        field[7][5] = "12";
+        field[8][5] = "16";
+        field[1][8] = "5";
+        field[2][8] = "5";
+        field[3][8] = "5";
+        field[4][8] = "10";
+        field[5][8] = "13";
+        field[6][8] = "13";
+        field[7][8] = "13";
+        field[8][8] = "18";
+        field[4][3] = "7";
+        field[4][4] = "7";
+        field[4][6] = "9";
+        field[4][7] = "9";
+        field[4][9] = "25";
+        field[4][10] = "25";
+        field[8][3] = "15";
+        field[8][4] = "15";
+        field[8][6] = "17";
+        field[8][7] = "17";
+        field[8][9] = "26";
+        field[8][10] = "26";
+        field[0][11] = "24";
+        field[1][11] = "32";
+        field[2][11] = "32";
+        field[3][11] = "32";
+        field[4][11] = "28";
+        field[5][11] = "29";
+        field[6][11] = "29";
+        field[7][11] = "29";
+        field[8][11] = "30";
+        for(int i = 0; i< 33; i++){
+            Road road = new Road();
+            road.setCorner(false);
+            road.setSchedule(new ArrayList<>());
+            roadHash.put(String.valueOf(i), road);
+        }
+        roadHash.get("0").setCorner(true);
+        roadHash.get("1").setCorner(true);
+        roadHash.get("2").setCorner(true);
+        roadHash.get("24").setCorner(true);
+        roadHash.get("6").setCorner(true);
+        roadHash.get("8").setCorner(true);
+        roadHash.get("10").setCorner(true);
+        roadHash.get("28").setCorner(true);
+        roadHash.get("14").setCorner(true);
+        roadHash.get("16").setCorner(true);
+        roadHash.get("18").setCorner(true);
+        roadHash.get("30").setCorner(true);
+
         ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
 
         ObjectMapper objectMapper = new ObjectMapper();
         Long turn = objectMapper.readValue(valueOperations.get("turn"),Long.class);
 
-        ArrayList<ResponseItem> responseItemList = payload.getResponseItemList();
-        for(ResponseItem responseItem: responseItemList){
-            long itemId = responseItem.getId();
-            int qty = responseItem.getQty();
+        List<CandidateDto> candidateDtoList = new ArrayList<>();
+        HashMap<Long, ArrayDeque<CandidateDto>> selected = new HashMap<>();  //stockId별로 고른 stock
+        HashMap<Long, ArrayList<Integer>> request = new HashMap<>();  // 몇개 필요, 몇개 골랐는지 처음 픽하기 위해
+        int minCost = 100000;
+        HashMap<Long, Integer> selectHashMap = new HashMap<>();//해당선반 몇번 픽됬는지
+        HashMap<Long, Pick> pickHashMap = new HashMap<>(); // 해당선반에서 몇번 스톡을 몇개 꺼내야하는지
 
-            while (qty >= 0){
+        ModelMapper mapper = new ModelMapper();
+        mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
+
+        //stockList를 돌면서 후보군 조회
+        for(ResponseItem item : payload.getResponseItemList()){
+            //몇개가 필요한지 몇개 골란는지 hashmap에 추가
+            request.put(item.getId(), new ArrayList<>());
+            request.get(item.getId()).add(item.getQty());
+            request.get(item.getId()).add(0);
+
+            selected.put(item.getId(), new ArrayDeque<>());
+
+            List<Object[]> res = stockRepository.findCandidate(item.getId());
+            res.forEach(obj ->{
+                CandidateDto candidateDto = new CandidateDto().fromObj(obj);
+                candidateDtoList.add(candidateDto);
+            });
+            //db에서 조회한 stock의 수가 필요한수보다 적다면 중단
+            if(item.getQty() > res.size()){
+                return false;
+            }
+        }
+
+        //피커위치 받아오기
+        request.put(0L, new ArrayList<>());
+        request.get(0L).add(1);
+        request.get(0L).add(0);
+
+        selected.put(0L, new ArrayDeque<>());
+        List<Picker> pickerList = pickerRepository.findByAssignmentLessThan(10);
+        for(Picker picker : pickerList){
+            CandidateDto candidateDto = CandidateDto.build(0L,
+                    100000 + picker.getPickerId(),
+                    picker.getX(),
+                    picker.getY()
+            );
+            candidateDtoList.add(candidateDto);
+        }
+        //물건을 받을수 있는 피커가 없다면 false 반환
+        if (pickerList.isEmpty()) {
+            return false;
+        }
+
+
+
+        int index = 0;
+        //일단 넣어요
+        for(CandidateDto candidateDto : candidateDtoList){
+            Long stockId = candidateDto.getStockId();
+            if (selected.get(stockId).size() < request.get(stockId).get(0)){
+                selected.get(stockId).add(candidateDto);
+                //deque에 넣을떄 몇번째인지 저장
+                request.get(stockId).set(1, request.get(stockId).get(1) + 1);
+                if (selectHashMap.containsKey(candidateDto.getId())){
+                    selectHashMap.put(candidateDto.getId(), index);
+                }else{
+                    selectHashMap.put(candidateDto.getId(), 1);
+                }
+                index ++;
+            }
+        }
+        //가득 차면 거리 측정
+        int pickerY = selected.get(0L).peek().getY();
+        CalculateResultDto res = check(minCost, selected);
+        int distance = res.getDistance();
+        minCost = res.getMeanCost();
+        if(res.isChange()){
+            pickHashMap = res.getPickHash();
+        }
+
+        //deque를 채운 index보다 작으면 패스
+        for(int i = 0; i < candidateDtoList.size(); i++){
+            CandidateDto candidateDto = candidateDtoList.get(i);
+            long stockId = candidateDto.getStockId();
+            if (request.get(stockId).get(1) < i){
+                //하나 뺀다, 해당 선반 몇번 골랐는지 변경
+                ArrayDeque<CandidateDto> selectedItem = selected.get(stockId);
+                CandidateDto polled = selectedItem.poll();
+                //제거하는 선반이 여러번 선택되었다면 --, 아니면 제거
+                if(selectHashMap.get(polled.getId()) == 1){
+                    selectHashMap.remove(polled.getId());
+                }else {
+                    selectHashMap.put(polled.getId(), selectHashMap.get(polled.getId()) - 1);
+                }
+                //deque에 추가
+                selectedItem.add(candidateDto);
+                //피커가 아니면 selectHashMap 갱신, 거리 갱신
+                if (stockId != 0L){
+                    if (selectHashMap.containsKey(candidateDto.getId())){
+                        selectHashMap.put(candidateDto.getId(), selectHashMap.get(candidateDto.getId()) + 1);
+                    }else{
+                        selectHashMap.put(candidateDto.getId(), 1);
+                        distance += - Math.abs(pickerY - polled.getY()) + Math.abs(pickerY - candidateDto.getY());
+                        //민코스트가 작다면 해당 정보 저장하기
+                        minCost = Math.min(distance, minCost);
+                    }
+                }else{
+                    pickerY = candidateDto.getX();
+                    selectHashMap.put(candidateDto.getId(), 1);
+                    res = check(minCost, selected);
+                    distance = res.getDistance();
+                    minCost = res.getMeanCost();
+                    if(res.isChange()){
+                        pickHashMap = res.getPickHash();
+                    }
+                }
+            }
+        }
+
+        System.out.println("mincost: " + minCost);
+        // 이동해야하는 선반 찾고 이동해야하는 위치와 dfsㄲㄲ
+        int endX = 0;
+        int endY = 0;
+        long pickerId = 0L;
+        for(Long key : pickHashMap.keySet()) {
+            if (key >= 1000) {
+                pickerId = key;
                 break;
             }
         }
-        return null;
+
+        for (CandidateDto candidateDto : candidateDtoList) {
+            if (candidateDto.getId() == pickerId) {
+                endX = candidateDto.getX();
+                endY = candidateDto.getY();
+                break;
+            }
+        }
+
+        for(Long key : pickHashMap.keySet()){
+            for(CandidateDto candidateDto : candidateDtoList){
+                if(candidateDto.getId() == key && candidateDto.getStockId() != 0L){
+                    int x = candidateDto.getX();
+                    int y = candidateDto.getY();
+                    Shelf shelf = shelfRepository.findById(candidateDto.getId()).orElseThrow(); // shelf 할당
+                    shelf.setStatus(true);
+                    shelfRepository.save(shelf);
+
+
+
+                    send(new int[] {x, y}, new int[] {endX, endY}, turn, candidateDto.getId(), payload, "pusherRes"); // 최단거리, 턴 계산
+                    break;
+                }
+            }
+        }
+        for(String key: isUsed){                                                                //schedule 정리
+            Road road = roadHash.get(key);
+            long biggest = 0L;
+            for (long[] schedule : road.getSchedule()){
+                if (schedule[0] > biggest) biggest = schedule[0];
+            }
+            ArrayList<long[]> newSchedule = new ArrayList<>();
+            newSchedule.add(new long[]{0L, biggest});
+            road.setSchedule(newSchedule);
+        }
+        isUsed = new HashSet<>();
+
+        return true;
     }
+
 
     @Override
     public Boolean find(Payload payload) throws Exception {
@@ -276,7 +509,7 @@ public class RobotServiceImpl implements RobotService{
 
         for(Long key : pickHashMap.keySet()){
             for(CandidateDto candidateDto : candidateDtoList){
-                if(candidateDto.getId() == key && candidateDto.getStockId() != 0L){
+                if(candidateDto.getId().equals(key) && candidateDto.getStockId() != 0L){
                     int x = candidateDto.getX();
                     int y = candidateDto.getY();
                     Shelf shelf = shelfRepository.findById(candidateDto.getId()).orElseThrow(); // shelf 할당
@@ -285,7 +518,7 @@ public class RobotServiceImpl implements RobotService{
 
 
 
-                    send(new int[] {x, y}, new int[] {endX, endY}, 20L, candidateDto.getId(), payload); // 최단거리, 턴 계산
+                    send(new int[] {x, y}, new int[] {endX, endY}, turn, candidateDto.getId(), payload, "pickerRes"); // 최단거리, 턴 계산
                     break;
                 }
             }
@@ -304,7 +537,6 @@ public class RobotServiceImpl implements RobotService{
 
         return true;
     }
-
     @Override
     public void receive(int[] start, Long shelfId) throws Exception{
         ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
@@ -322,9 +554,8 @@ public class RobotServiceImpl implements RobotService{
         }
         Payload payload = new Payload();
         int[] end = new int[]{0,pickField[1]};
-        dfs(start, pickField, end, turn, pick, shelfId, payload);
+        dfs(start, pickField, end, turn, pick, shelfId, payload, "");           //반환 로직에선 카프카 안써요
     }
-
     public static CalculateResultDto check(int minCost, HashMap<Long, ArrayDeque<CandidateDto>> selected) throws Exception{
         boolean ischange = false;
         int pickerX = selected.get(0L).peek().getX();
@@ -362,8 +593,7 @@ public class RobotServiceImpl implements RobotService{
 
         return  new CalculateResultDto(distance, minCost, ischange, pickHashMap);
     }
-
-    public void send(int[] pick, int[] end, long turn, long shelfId, Payload payload) throws Exception {
+    public void send(int[] pick, int[] end, long turn, long shelfId, Payload payload, String topic) throws Exception {
         // 선반과 상호작용할 위치 찾기
         int[] pickField = new int[2];
         int[] start = new int[2];
@@ -373,9 +603,9 @@ public class RobotServiceImpl implements RobotService{
             pickField = new int[]{pick[0], pick[1] + 1};
         }
         start = new int[]{0, pickField[1]};
-        dfs(start, pickField, end, turn, pick, shelfId, payload);
+        dfs(start, pickField, end, turn, pick, shelfId, payload, topic);
     }
-    public void dfs(int[] start, int[] pick,  int[]end, long turn, int[] shelf, long shelfId, Payload payload) throws Exception{
+    public void dfs(int[] start, int[] pick,  int[]end, long turn, int[] shelf, long shelfId, Payload payload, String topic) throws Exception{
         long[][] visit = new long[9][13];
         Stack<int[]> ans = new Stack<>();
         for (int i = 0; i < 9; i++) {
@@ -636,10 +866,12 @@ public class RobotServiceImpl implements RobotService{
                     .orderId(payload.getId())
                     .pickerId("1")                              //redis로 받는 로직 추가 필요!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     .turn(fastest + visit[end[0]][end[1]])      //도착 시간
+                    //.responseItemList()                       // 해당선반에서 꺼내는거
                     .build();
+            kafkaProducer.toWorker(workerRes, topic);
         }
 
-        robotHandler.sendCommand(robot.getRobotId(), pressured.toString(), robot.getPositionX(), robot.getPositionY(), shelfId, turn,fastest);//해당 로봇에게 메세지 전달
+        robotHandler.sendCommand(robot.getRobotId(), pressured.toString(), robot.getPositionX(), robot.getPositionY(), shelfId, turn, fastest);//해당 로봇에게 메세지 전달
 
     }
 
