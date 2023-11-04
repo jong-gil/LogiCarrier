@@ -26,37 +26,6 @@ public class KafkaConsumer {
     private final StockRepository stockRepository;
 
     private final KafkaTemplate<String, String> kafkaTemplate;
-    //요청받은 주문과 아이템 정보 orderInfo로 produce
-    @KafkaListener(topics = "orders")
-    public void orders(String message) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        OrderRequestDto orderRequestDto = objectMapper.readValue(message, OrderRequestDto.class);
-        OrderEntity orderEntity = orderRepository.findById(orderRequestDto.getId()).orElseThrow(NoSuchElementException::new);
-        ModelMapper mapper = new ModelMapper();
-        OrderDto orderDto = mapper.map(orderEntity, OrderDto.class);
-        List<ItemEntity> itemEntityList= itemRepository.findAllByOrderEntity(orderEntity);
-        List<ResponseItem> responseItemList = new ArrayList<>();
-        for(ItemEntity itemEntity : itemEntityList){
-            ResponseItem responseItem = mapper.map(itemEntity, ResponseItem.class);
-            responseItemList.add(responseItem);
-        }
-        orderDto.setResponseItemList(responseItemList);
-        orderProducer.send("orderInfo", orderDto);
-        System.out.println(String.format("Consumed message : %s", message));
-    }
-
-
-    // 배송준비된 아이템의 준비시간 status  변경후 저장
-    @KafkaListener(topics = "itemFinsih")
-    public void itemFinish(String message) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        ItemFinishDto itemFinishDto = objectMapper.readValue(message, ItemFinishDto.class);
-        ItemEntity itemEntity = itemRepository.findById(itemFinishDto.getId()).orElseThrow(NoSuchElementException::new);
-
-        itemEntity.setFinishedTime(LocalDateTime.now().toString());
-        itemEntity.setStatus(true);
-        itemRepository.save(itemEntity);
-    }
     // 배송준비된 주문의 준비시간 status  변경후 저장
     @KafkaListener(topics = "itemFinsih")
     public void orderFinish(String message) throws IOException {
