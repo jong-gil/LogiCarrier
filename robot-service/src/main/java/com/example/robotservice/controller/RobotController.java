@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("robot-service")
+@RequestMapping("")
 @RequiredArgsConstructor
 @EnableScheduling
 @Slf4j
@@ -26,11 +28,7 @@ public class RobotController {
     private final RedisTemplate<String, String> redisTemplate;
     private final RobotService robotService;
 
-    @GetMapping("")
-    public String find(){
-        kafkaProducer.requestOrderInfo();
-        return "success";
-    }
+
 
     @Scheduled(cron = "0/2 * * * * ?")          //2초에 1턴
     @GetMapping("/turn")
@@ -47,7 +45,7 @@ public class RobotController {
 
     //주문 정보 가능한 피커라인 x3만큼 덱에 저장
     @GetMapping("/pick")
-    public String pick() {
+    public ResponseEntity<String> pick() {
         ValueOperations <String, String> valueOperations = redisTemplate.opsForValue();
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -64,11 +62,11 @@ public class RobotController {
             kafkaProducer.requestOrderInfo();
         }
 
-        return "orderDeque is full!";
+        return ResponseEntity.status(HttpStatus.OK).body("orderDeque is full!");
     }
 
     @GetMapping("/push")
-    public String push() {
+    public ResponseEntity<String> push() {
         ValueOperations <String, String> valueOperations = redisTemplate.opsForValue();
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -85,11 +83,11 @@ public class RobotController {
             kafkaProducer.requestPushInfo();
         }
 
-        return "orderDeque is full!";
+        return ResponseEntity.status(HttpStatus.OK).body("pushDeque is full!");
     }
     //가능한 라인 만큼 경로 계획하는 api
     @GetMapping("/pick/start")
-    public String start() throws Exception {
+    public ResponseEntity<String> start() throws Exception {
         ValueOperations <String, String> valueOperations = redisTemplate.opsForValue();
         ListOperations<String, String> listOperations = redisTemplate.opsForList();
         ObjectMapper objectMapper = new ObjectMapper();
@@ -116,10 +114,10 @@ public class RobotController {
             }
         }
 
-        return "picker started!";
+        return ResponseEntity.status(HttpStatus.OK).body("picker started!");
     }
     @GetMapping("/push/start")
-    public String pushStart() throws Exception {
+    public ResponseEntity<String> pushStart() throws Exception {
         ValueOperations <String, String> valueOperations = redisTemplate.opsForValue();
         ListOperations<String, String> listOperations = redisTemplate.opsForList();
         ObjectMapper objectMapper = new ObjectMapper();
@@ -148,6 +146,6 @@ public class RobotController {
             }
         }
         log.info("pusher start!");
-        return "pusher started!";
+        return ResponseEntity.status(HttpStatus.OK).body("pusher started!");
     }
 }

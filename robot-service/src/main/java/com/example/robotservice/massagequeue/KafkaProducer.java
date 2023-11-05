@@ -32,7 +32,7 @@ public class KafkaProducer {
     }
 
     public void requestOrderInfo() {
-        kafkaTemplate.send("nextOrders", "from robot-service!");
+        kafkaTemplate.send("nextOrder", "from robot-service!");
         log.info("OrderInfo Requested!");
     }
     public void requestPushInfo() {

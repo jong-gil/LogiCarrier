@@ -43,24 +43,30 @@ public class KafkaConsumer {
     public void targetInfo(String message) throws IOException, Exception {
         ListOperations<String, String> listOperations = redisTemplate.opsForList();
         ObjectMapper objectMapper = new ObjectMapper();
-        Payload payload = objectMapper.readValue(message, Payload.class);
-        robotService.find(payload);
-        // 주문 정보 받아서 덱에 저장
-        listOperations.rightPush("orderDeque", message);
+        try{
+            Payload payload = objectMapper.readValue(message, Payload.class);
+            // 주문 정보 받아서 덱에 저장
+            listOperations.rightPush("orderDeque", message);
 
-        log.info(String.format("Consumed message : %s", message));
+            log.info(String.format("Consumed message : %s", message));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     @KafkaListener(topics = "pushInfo")           //푸시하는 오더 덱에 추가
     public void pushInfo(String message) throws IOException, Exception {
         ListOperations<String, String> listOperations = redisTemplate.opsForList();
         ObjectMapper objectMapper = new ObjectMapper();
-        Payload payload = objectMapper.readValue(message, Payload.class);
-        robotService.find(payload);
-        // 주문 정보 받아서 덱에 저장
-        listOperations.rightPush("pushDeque", message);
+        try{
+            Payload payload = objectMapper.readValue(message, Payload.class);
+            // 주문 정보 받아서 덱에 저장
+            listOperations.rightPush("pushDeque", message);
 
-        log.info(String.format("Consumed message : %s", message));
+            log.info(String.format("Consumed message : %s", message));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     @Transactional

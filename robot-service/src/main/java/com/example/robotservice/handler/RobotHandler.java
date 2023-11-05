@@ -58,8 +58,7 @@ public class RobotHandler implements WebSocketHandler {
         if(setOperations.isMember("readyToGo", sb.toString())){
             int[] start = new int[]{robot.getPositionX(), robot.getPositionY()};
             Long shelfId = robot.getShelfId();
-            applicationEventPublisher.publishEvent(new RobotEvent(start, shelfId));
-            //robotService.receive(start, shelfId);
+            applicationEventPublisher.publishEvent(new RobotEvent(start, shelfId));         //robotService.receive(start, shelfId) 이벤트
 
         }
 
