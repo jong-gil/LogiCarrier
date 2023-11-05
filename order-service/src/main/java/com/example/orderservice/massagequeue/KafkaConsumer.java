@@ -39,7 +39,7 @@ public class KafkaConsumer {
     }
 
     //요청받은 주문과 아이템 정보 orderInfo로 produce
-    @KafkaListener(topics = "nextOrders")
+    @KafkaListener(topics = "nextOrder")
     public void nextOrders(String message) throws IOException {
         OrderEntity orderEntity = orderRepository.findTopByStatusOrderByCreatedTime(0).orElseThrow(NoSuchElementException::new);
         ModelMapper mapper = new ModelMapper();
