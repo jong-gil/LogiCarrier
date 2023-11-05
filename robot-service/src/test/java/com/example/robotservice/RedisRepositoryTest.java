@@ -58,7 +58,7 @@ public class RedisRepositoryTest {
         ModelMapper mapper = new ModelMapper();
         System.out.println(firstName);
 
-        redisTemplate.delete("key");
+        //redisTemplate.delete("key");
     }
     @Test
     public void robotStackTest() throws JsonMappingException, JsonProcessingException {
