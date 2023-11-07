@@ -20,7 +20,7 @@ import java.util.*;
 @SpringBootTest
 public class RedisRepositoryTest {
     @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisTemplate<String, String> redisTemplate;
     @Autowired
     private PersonRedisRepository repo;
 
@@ -63,7 +63,7 @@ public class RedisRepositoryTest {
     @Test
     public void robotStackTest() throws JsonMappingException, JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
-        HashOperations<String, Object, Object> hashOperations = redisTemplate.opsForHash();
+        HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
 
         Map<String, String> map = new HashMap<>();
         Robot testRobot = Robot.builder()
