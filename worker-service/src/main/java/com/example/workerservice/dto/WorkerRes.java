@@ -7,8 +7,8 @@ import java.util.ArrayList;
 
 @Data
 @Builder
-public class PickerRes {
-    private String pickerId;
+public class WorkerRes {
+    private String workerId;
     private long orderId;
     private long shelfId;
     private String robotId;
