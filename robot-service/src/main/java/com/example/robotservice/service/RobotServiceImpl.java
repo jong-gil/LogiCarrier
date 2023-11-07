@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.core.env.Environment;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -24,6 +25,7 @@ import java.util.*;
 @Slf4j
 @RequiredArgsConstructor
 public class RobotServiceImpl implements RobotService{
+    private final Environment env;
     private final ShelfRepository shelfRepository;
     private final PickerRepository pickerRepository;
     private final ShelfStockRepository stockRepository;
@@ -31,8 +33,6 @@ public class RobotServiceImpl implements RobotService{
     private final RedisTemplate<String, String> stringRedisTemplate;
     private final RobotHandler robotHandler;
     private final KafkaProducer kafkaProducer;
-    private final String[][] field = new String[9][13];
-    private final HashMap<String, Road> roadHash = new HashMap<>();
     private Set<String> isUsed;
 
     public static int[][] deltas  = {
@@ -42,87 +42,15 @@ public class RobotServiceImpl implements RobotService{
 
     @Override
     public Boolean findSpace(Payload payload) throws Exception {
-        for(ResponseItem responseItem : payload.getResponseItemList()){
-            responseItem.setId(0L);                                     //빈공간 찾기
-        }
-        for (int i = 0; i < 9; i++) {
-            for (int j = 0; j < 13; j++) {
-                field[i][j] = "";
-            }
-        }
-        //field 초기값
-        field[0][2] = "0";
-        field[0][5] = "1";
-        field[0][8] = "2";
-        field[1][2] = "3";
-        field[2][2] = "3";
-        field[3][2] = "3";
-        field[4][2] = "6";
-        field[5][2] = "11";
-        field[6][2] = "11";
-        field[7][2] = "11";
-        field[8][2] = "14";
-        field[1][5] = "4";
-        field[2][5] = "4";
-        field[3][5] = "4";
-        field[4][5] = "8";
-        field[5][5] = "12";
-        field[6][5] = "12";
-        field[7][5] = "12";
-        field[8][5] = "16";
-        field[1][8] = "5";
-        field[2][8] = "5";
-        field[3][8] = "5";
-        field[4][8] = "10";
-        field[5][8] = "13";
-        field[6][8] = "13";
-        field[7][8] = "13";
-        field[8][8] = "18";
-        field[4][3] = "7";
-        field[4][4] = "7";
-        field[4][6] = "9";
-        field[4][7] = "9";
-        field[4][9] = "25";
-        field[4][10] = "25";
-        field[8][3] = "15";
-        field[8][4] = "15";
-        field[8][6] = "17";
-        field[8][7] = "17";
-        field[8][9] = "26";
-        field[8][10] = "26";
-        field[0][11] = "24";
-        field[1][11] = "32";
-        field[2][11] = "32";
-        field[3][11] = "32";
-        field[4][11] = "28";
-        field[5][11] = "29";
-        field[6][11] = "29";
-        field[7][11] = "29";
-        field[8][11] = "30";
-        for(int i = 0; i< 33; i++){
-            Road road = new Road();
-            road.setCorner(false);
-            road.setSchedule(new ArrayList<>());
-            roadHash.put(String.valueOf(i), road);
-        }
-        roadHash.get("0").setCorner(true);
-        roadHash.get("1").setCorner(true);
-        roadHash.get("2").setCorner(true);
-        roadHash.get("24").setCorner(true);
-        roadHash.get("6").setCorner(true);
-        roadHash.get("8").setCorner(true);
-        roadHash.get("10").setCorner(true);
-        roadHash.get("28").setCorner(true);
-        roadHash.get("14").setCorner(true);
-        roadHash.get("16").setCorner(true);
-        roadHash.get("18").setCorner(true);
-        roadHash.get("30").setCorner(true);
-
         ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+        HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
 
         ObjectMapper objectMapper = new ObjectMapper();
         Long turn = objectMapper.readValue(valueOperations.get("turn"),Long.class);
 
+        for(ResponseItem responseItem : payload.getResponseItemList()){
+            responseItem.setId(0L);                                     //빈공간 찾기
+        }
         List<CandidateDto> candidateDtoList = new ArrayList<>();
         HashMap<Long, ArrayDeque<CandidateDto>> selected = new HashMap<>();  //stockId별로 고른 stock
         HashMap<Long, ArrayList<Integer>> request = new HashMap<>();  // 몇개 필요, 몇개 골랐는지 처음 픽하기 위해
@@ -276,7 +204,7 @@ public class RobotServiceImpl implements RobotService{
             }
         }
         for(String key: isUsed){                                                                //schedule 정리
-            Road road = roadHash.get(key);
+            Road road = objectMapper.readValue(hashOperations.get("roadHash", key), Road.class);
             long biggest = 0L;
             for (long[] schedule : road.getSchedule()){
                 if (schedule[0] > biggest) biggest = schedule[0];
@@ -289,84 +217,10 @@ public class RobotServiceImpl implements RobotService{
 
         return true;
     }
-
-
     @Override
     public Boolean find(Payload payload) throws Exception {
-        for (int i = 0; i < 9; i++) {
-            for (int j = 0; j < 13; j++) {
-                field[i][j] = "";
-            }
-        }
-        //field 초기값
-        field[0][2] = "0";
-        field[0][5] = "1";
-        field[0][8] = "2";
-        field[1][2] = "3";
-        field[2][2] = "3";
-        field[3][2] = "3";
-        field[4][2] = "6";
-        field[5][2] = "11";
-        field[6][2] = "11";
-        field[7][2] = "11";
-        field[8][2] = "14";
-        field[1][5] = "4";
-        field[2][5] = "4";
-        field[3][5] = "4";
-        field[4][5] = "8";
-        field[5][5] = "12";
-        field[6][5] = "12";
-        field[7][5] = "12";
-        field[8][5] = "16";
-        field[1][8] = "5";
-        field[2][8] = "5";
-        field[3][8] = "5";
-        field[4][8] = "10";
-        field[5][8] = "13";
-        field[6][8] = "13";
-        field[7][8] = "13";
-        field[8][8] = "18";
-        field[4][3] = "7";
-        field[4][4] = "7";
-        field[4][6] = "9";
-        field[4][7] = "9";
-        field[4][9] = "25";
-        field[4][10] = "25";
-        field[8][3] = "15";
-        field[8][4] = "15";
-        field[8][6] = "17";
-        field[8][7] = "17";
-        field[8][9] = "26";
-        field[8][10] = "26";
-        field[0][11] = "24";
-        field[1][11] = "32";
-        field[2][11] = "32";
-        field[3][11] = "32";
-        field[4][11] = "28";
-        field[5][11] = "29";
-        field[6][11] = "29";
-        field[7][11] = "29";
-        field[8][11] = "30";
-        for(int i = 0; i< 33; i++){
-            Road road = new Road();
-            road.setCorner(false);
-            road.setSchedule(new ArrayList<>());
-            roadHash.put(String.valueOf(i), road);
-        }
-        roadHash.get("0").setCorner(true);
-        roadHash.get("1").setCorner(true);
-        roadHash.get("2").setCorner(true);
-        roadHash.get("24").setCorner(true);
-        roadHash.get("6").setCorner(true);
-        roadHash.get("8").setCorner(true);
-        roadHash.get("10").setCorner(true);
-        roadHash.get("28").setCorner(true);
-        roadHash.get("14").setCorner(true);
-        roadHash.get("16").setCorner(true);
-        roadHash.get("18").setCorner(true);
-        roadHash.get("30").setCorner(true);
-
         ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+        HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
 
         ObjectMapper objectMapper = new ObjectMapper();
         Long turn = objectMapper.readValue(valueOperations.get("turn"),Long.class);
@@ -524,7 +378,7 @@ public class RobotServiceImpl implements RobotService{
             }
         }
         for(String key: isUsed){                                                                //schedule 정리
-            Road road = roadHash.get(key);
+            Road road = objectMapper.readValue(hashOperations.get("roadHash", key), Road.class);
             long biggest = 0L;
             for (long[] schedule : road.getSchedule()){
                 if (schedule[0] > biggest) biggest = schedule[0];
@@ -539,6 +393,7 @@ public class RobotServiceImpl implements RobotService{
     }
     @Override
     public void receive(int[] start, Long shelfId) throws Exception{
+        HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
         ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -547,9 +402,10 @@ public class RobotServiceImpl implements RobotService{
         // 선반과 상호작용할 위치 찾기
         int[] pick = new int[]{shelf.getX(), shelf.getY()};
         int[] pickField = new int[2];
-        if (pick[1] >= 1 && roadHash.containsKey(field[pick[0]][pick[1] -1])){
+        int lengthY = Integer.valueOf(env.getProperty("field.y"));
+        if (pick[1] >= 1 && hashOperations.hasKey("roadHash", hashOperations.get("field", String.valueOf(pick[0]) +"."+ String.valueOf(pick[1] - 1)))){
             pickField = new int[]{pick[0], pick[1] - 1};
-        } else if (pick[1] + 1 < field[0].length && roadHash.containsKey(field[pick[0]][pick[1] + 1])) {
+        } else if (pick[1] + 1 < lengthY && hashOperations.hasKey("roadHash", hashOperations.get("field", String.valueOf(pick[0]) + "." + String.valueOf(pick[1] + 1)))) {        //yml에서 길이 받기
             pickField = new int[]{pick[0], pick[1] + 1};
         }
         Payload payload = new Payload();
@@ -594,18 +450,21 @@ public class RobotServiceImpl implements RobotService{
         return  new CalculateResultDto(distance, minCost, ischange, pickHashMap);
     }
     public void send(int[] pick, int[] end, long turn, long shelfId, Payload payload, String topic) throws Exception {
+        HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
         // 선반과 상호작용할 위치 찾기
         int[] pickField = new int[2];
         int[] start = new int[2];
-        if (pick[1] >= 1 && roadHash.containsKey(field[pick[0]][pick[1] -1])){
+        int lengthY = Integer.valueOf(env.getProperty("field.y"));
+        if (pick[1] >= 1 && hashOperations.hasKey("roadHash", hashOperations.get("field", String.valueOf(pick[0]) + "." + String.valueOf(pick[1] - 1)))){
             pickField = new int[]{pick[0], pick[1] - 1};
-        } else if (pick[1] + 1 < field[0].length && roadHash.containsKey(field[pick[0]][pick[1] + 1])) {
+        } else if (pick[1] + 1 < lengthY && hashOperations.hasKey("roadHash", hashOperations.get("field", String.valueOf(pick[0]) + "." + String.valueOf(pick[1] + 1)))) {
             pickField = new int[]{pick[0], pick[1] + 1};
         }
         start = new int[]{0, pickField[1]};
         dfs(start, pickField, end, turn, pick, shelfId, payload, topic);
     }
     public void dfs(int[] start, int[] pick,  int[]end, long turn, int[] shelf, long shelfId, Payload payload, String topic) throws Exception{
+        HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
         long[][] visit = new long[9][13];
         Stack<int[]> ans = new Stack<>();
         for (int i = 0; i < 9; i++) {
@@ -615,7 +474,6 @@ public class RobotServiceImpl implements RobotService{
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
-        HashOperations<String, Object, Object> hashOperations = redisTemplate.opsForHash();
 
         //결과
         ArrayList<String> ansKeyList = new ArrayList<>();
@@ -649,8 +507,11 @@ public class RobotServiceImpl implements RobotService{
                     int nx = stack.get(i)[0];
                     int ny = stack.get(i)[1];
                     int nDirection = stack.get(i)[2];
-                    keyList.add(field[nx][ny]);
-                    if (nDirection %2 == 0 && !roadHash.get(keyList.get(keyList.size() - 1)).isCorner()) {
+                    StringBuilder sb = new StringBuilder();
+                    String key = hashOperations.get("field", sb.append(nx).append(".").append(ny).toString());
+                    keyList.add(key);
+                    Road road = objectMapper.readValue(hashOperations.get("roadHash", keyList.get(keyList.size() - 1)), Road.class);
+                    if (nDirection %2 == 0 && ! road.isCorner()) {
                         directList.add(true);
                     } else {
                         directList.add(false);
@@ -662,7 +523,7 @@ public class RobotServiceImpl implements RobotService{
                     }else{
                         startTime = startList.get(startList.size() - 1) + sizeList.get(sizeList.size() - 2);
                     }
-                    while (i < stack.size() && field[nx][ny].equals(field[stack.get(i)[0]][stack.get(i)[1]])) {
+                    while (i < stack.size() && key.equals( hashOperations.get("field", new StringBuilder().append(stack.get(i)[0]).append(".").append(stack.get(i)[1]).toString()))) {
                         i++;
                         isCorver = true;
                     }
@@ -675,7 +536,7 @@ public class RobotServiceImpl implements RobotService{
                             sizeList.set(sizeList.size() - 1,endTime);
                         }
                     }
-                    if(roadHash.get(keyList.get(keyList.size() - 1)).isCorner()){
+                    if(road.isCorner()){
                         startList.add(startTime - sizeList.get(sizeList.size() - 1) + 1);
                     }else {
                         startList.add(startTime);
@@ -689,7 +550,8 @@ public class RobotServiceImpl implements RobotService{
                 for (int j = keyList.size() - 1; j >= 0; j--) {
                     long size = sizeList.get(j);
                     String key = keyList.get(j);
-                    ArrayList<long[]> schedule = roadHash.get(key).getSchedule();
+                    Road road = objectMapper.readValue(hashOperations.get("roadHash", key), Road.class);
+                    ArrayList<long[]> schedule = road.getSchedule();
 
                     //이전 값 갱신
                     for (int k = 0; k < disableTime.size(); k++) {
@@ -700,7 +562,7 @@ public class RobotServiceImpl implements RobotService{
                     if (directList.get(j)) {//정방향이면
                         disableTime.addAll(schedule);
                     }else { //역방향일시
-                        if (roadHash.get(key).isCorner()){
+                        if (road.isCorner()){
                             for (long[] disable : schedule) {
                                 disableTime.add(new long[] {disable[0] - size + 1, disable[1]});
                             }
@@ -743,13 +605,17 @@ public class RobotServiceImpl implements RobotService{
             }
 
             boolean logic  = true;
+            int lengthY = Integer.valueOf(env.getProperty("field.y"));
+            int lengthX = Integer.valueOf(env.getProperty("field.x"));
+
             for (int i = 0; i < 4; i++) {
                 int dx = x + deltas[0][(i + direction)%4];
                 int dy = y + deltas[1][(i + direction)%4];
+                String fieldKey = hashOperations.get("field", new StringBuilder().append(dx).append(".").append(dy).toString());
                 long cost = i%2 + 1;
                 if (dx == pick[0] && dy == pick[1]) cost += 7; //선반 꺼내오기
                 if (dx == end[0] && dy == end[1] && !(direction%2 == 0)) cost ++; //마지막에 나가는 방향으로 바꾸기
-                if (0 <= dx && dx < field.length && 0 <= dy && dy < field[0].length && !field[dx][dy].equals("") && visit[dx][dy] > time + cost  && time + cost <= visit[end[0]][end[1]]) {
+                if (0 <= dx && dx < lengthX && 0 <= dy && dy < lengthY && !fieldKey.equals("") && visit[dx][dy] > time + cost  && time + cost <= visit[end[0]][end[1]]) {
                     stack.add(new int[]{dx, dy, (i + direction)%4});
                     visit[dx][dy] = visit[x][y] + cost;
                     logic = false;
@@ -765,17 +631,20 @@ public class RobotServiceImpl implements RobotService{
             long size = ansSizeList.get(j);
             long time = ansStartList.get(j);
             String key = ansKeyList.get(j);
+            String fieldKey = hashOperations.get("field", new StringBuilder().append(pick[0]).append(".").append(pick[1]).toString());
+            Road road = objectMapper.readValue(hashOperations.get("roadHash", key), Road.class);
             //불가능한 시간 추가
-            if (ansDirectList.get(j) && !field[pick[0]][pick[1]].equals(key) ) {//정방향고 선반을 픽업하지 않으면
-                roadHash.get(key).getSchedule().add(new long[]{time + fastest - 1, time + fastest - 1});
+            if (ansDirectList.get(j) && ! fieldKey.equals(key) ) {//정방향고 선반을 픽업하지 않으면
+                road.getSchedule().add(new long[]{time + fastest - 1, time + fastest - 1});
             }else { //역방향일시
-                if (roadHash.get(key).isCorner()){
-                    roadHash.get(key).getSchedule().add(new long[] {time + fastest - 1, time + size - 1 + fastest - 1});
+                if (road.isCorner()){
+                    road.getSchedule().add(new long[] {time + fastest - 1, time + size - 1 + fastest - 1});
                     System.out.println("asd");
                 }else{
-                        roadHash.get(key).getSchedule().add(new long[] {time - size + fastest - 1, time + size + fastest - 1});
+                        road.getSchedule().add(new long[] {time - size + fastest - 1, time + size + fastest - 1});
                 }
             }
+            hashOperations.put("roadHash", key, objectMapper.writeValueAsString(road));
             isUsed.add(key); //업데이트한 키 추가 -> 스케줄 정리하기 위해 -> 주문이 섞이는것 방지
         }
 
@@ -783,8 +652,9 @@ public class RobotServiceImpl implements RobotService{
         Robot robot = new Robot();
 
         if(payload.getId() != null) {                   //출발지에 대기중인 로봇 스택 읽기
+            String fieldKey = hashOperations.get("field", new StringBuilder().append(start[0]).append(".").append(start[1]).toString());
             RobotStack robotStack = objectMapper.
-                    readValue((String) hashOperations.get("robotStack", field[start[0]][start[1]]), RobotStack.class);
+                    readValue((String) hashOperations.get("robotStack", fieldKey), RobotStack.class);
 
             Stack<String> robotIdStack = robotStack.getRobotIdStack();
             String id = robotIdStack.pop();
@@ -824,8 +694,9 @@ public class RobotServiceImpl implements RobotService{
             i++;
         }
         if(payload.getId() == null){                        //반환 로직이면 스택 길이 만큼 더 들어가고 180도 회전
+            String fieldKey = hashOperations.get("field", new StringBuilder().append(start[0]).append(".").append(start[1]).toString());
             RobotStack robotStack = objectMapper.
-                    readValue((String) hashOperations.get("robotStack", field[start[0]][start[1]]), RobotStack.class);
+                    readValue((String) hashOperations.get("robotStack", fieldKey), RobotStack.class);
 
             Stack<String> robotIdStack = robotStack.getRobotIdStack();
             //stack의 최대 길이는 5
