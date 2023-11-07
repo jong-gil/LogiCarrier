@@ -1,7 +1,7 @@
 package com.example.workerservice.service;
 
-import com.example.workerservice.dto.PickerReq;
-import com.example.workerservice.dto.PickerRes;
+import com.example.workerservice.dto.WorkerReq;
+import com.example.workerservice.dto.WorkerRes;
 import com.example.workerservice.dto.ResponseItem;
 import com.example.workerservice.entity.WorkerEntity;
 import com.example.workerservice.messagequeue.KafkaProducer;
@@ -27,50 +27,27 @@ public class WorkerServiceImpl implements WorkerService{
 
     @Override
     @Transactional
-    public String pickItem(String pickerId, long itemId) {
+    public String pickItem(String workerId, long itemId) {
         ZSetOperations<String, Object> redisSortedSet = redisTemplate.opsForZSet();
-        String result = "";
+        StringBuilder sb = new StringBuilder("worker");
 
-        switch (pickerId) {
-            case "1": {
-                Object target = Objects.requireNonNull(redisSortedSet.popMin("worker1")).getValue();
-                Object nextTarget = Objects.requireNonNull(redisSortedSet.range("worker1", 0, 0));
+        int workerInt = Integer.parseInt(workerId) + 1;
 
-                return process(itemId, target, nextTarget);
-            }
-            case "2": {
-                Object target = Objects.requireNonNull(redisSortedSet.popMin("worker2")).getValue();
-                Object nextTarget = Objects.requireNonNull(redisSortedSet.range("worker2", 0, 0));
+        if (0 < workerInt && workerInt < 6) {
+            String workerBitKey = String.valueOf(sb.append(workerInt));
+            Object target = Objects.requireNonNull(redisSortedSet.popMin(workerBitKey)).getValue();
+            Object nextTarget = Objects.requireNonNull(redisSortedSet.range(workerBitKey, 0, 0));
 
-                return process(itemId, target, nextTarget);
-            }
-            case "3": {
-                Object target = Objects.requireNonNull(redisSortedSet.popMin("worker3")).getValue();
-                Object nextTarget = Objects.requireNonNull(redisSortedSet.range("worker3", 0, 0));
-
-                return process(itemId, target, nextTarget);
-            }
-            case "4": {
-                Object target = Objects.requireNonNull(redisSortedSet.popMin("worker4")).getValue();
-                Object nextTarget = Objects.requireNonNull(redisSortedSet.range("worker4", 0, 0));
-
-                return process(itemId, target, nextTarget);
-            }
-            case "5": {
-                Object target = Objects.requireNonNull(redisSortedSet.popMin("worker5")).getValue();
-                Object nextTarget = Objects.requireNonNull(redisSortedSet.range("worker5", 0, 0));
-
-                return process(itemId, target, nextTarget);
-            }
-            default:
-                return "Picker is NOT Present";
+            return process(itemId, target, nextTarget, workerId);
+        } else {
+            return "Picker is NOT PRESENT";
         }
     }
 
     @Override
     @Transactional
-    public String changePosition(String pickerId) {
-        Long pickerIdL = Long.parseLong(pickerId);
+    public String changePosition(String workerId) {
+        Long pickerIdL = Long.parseLong(workerId);
         Optional<WorkerEntity> worker = workerRepository.findByWorkerId(pickerIdL);
 
         if (worker.isPresent()) {
@@ -87,17 +64,18 @@ public class WorkerServiceImpl implements WorkerService{
         return "worker is NOT PRESENT";
     }
 
-    private String process(long itemId, Object target, Object nextTarget){
-        PickerRes targetPayload = mapper.convertValue(target, PickerRes.class);
-        PickerRes nextTargetPayload = mapper.convertValue(nextTarget, PickerRes.class);
+    private String process(long itemId, Object target, Object nextTarget, String workerId){
+        WorkerRes targetPayload = mapper.convertValue(target, WorkerRes.class);
+        WorkerRes nextTargetPayload = mapper.convertValue(nextTarget, WorkerRes.class);
+
+        ArrayList<ResponseItem> itemList = targetPayload.getResponseItemList();
 
         // 지금 orderId와 다음 orderId가 같다면 같은 주문임
         if (targetPayload.getOrderId() == nextTargetPayload.getOrderId()) {
-            ArrayList<ResponseItem> itemList = targetPayload.getResponseItemList();
             // 주문에 해당하는 item처리
             itemList.removeIf(item -> item.getId() == itemId);
             // 하나의 route 처리 완료 -> robotService로 출발 신호 보내기
-            PickerReq pickedItem = PickerReq.builder()
+            WorkerReq pickedItem = WorkerReq.builder()
                     .robotId(targetPayload.getRobotId())
                     .shelfId(targetPayload.getShelfId())
                     .responseItemList(itemList)
@@ -106,17 +84,17 @@ public class WorkerServiceImpl implements WorkerService{
             return itemId + "is Picked";
         } // 다르다면 하나의 주문이 처리된 것 -> orderService로 complete 보냄
         else {
-            ArrayList<ResponseItem> itemList = targetPayload.getResponseItemList();
             // 주문에 해당하는 item처리
             itemList.removeIf(item -> item.getId() == itemId);
             // 하나의 route 처리 완료 -> robotService로 출발 신호 보내기
-            PickerReq pickedItem = PickerReq.builder()
+            WorkerReq pickedItem = WorkerReq.builder()
                     .robotId(targetPayload.getRobotId())
                     .shelfId(targetPayload.getShelfId())
                     .build();
             kafkaProducer.pickedItem("PickerToRobot", pickedItem);
 
-            PickerReq orderCompleted = PickerReq.builder()
+            WorkerReq orderCompleted = WorkerReq.builder()
+                    .workerId(workerId)
                     .orderStatus(true)
                     .build();
             kafkaProducer.orderCompleted("PickerToOrder", orderCompleted);

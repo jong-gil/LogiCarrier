@@ -1,6 +1,6 @@
 package com.example.workerservice.messagequeue;
 
-import com.example.workerservice.dto.PickerReq;
+import com.example.workerservice.dto.WorkerReq;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ public class KafkaProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
 
     // topic == "PickerToRobot"
-    public void pickedItem(String topic, PickerReq pickerReq) {
+    public void pickedItem(String topic, WorkerReq pickerReq) {
         ObjectMapper mapper = new ObjectMapper();
         String jsonInString = "";
         try {
@@ -25,7 +25,7 @@ public class KafkaProducer {
     }
 
     // topic == "PickerToOrder"
-    public void orderCompleted(String topic, PickerReq pickerReq) {
+    public void orderCompleted(String topic, WorkerReq pickerReq) {
         ObjectMapper mapper = new ObjectMapper();
         String jsonInString = "";
         try {

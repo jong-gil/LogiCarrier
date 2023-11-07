@@ -1,6 +1,6 @@
 package com.example.workerservice.messagequeue;
 
-import com.example.workerservice.dto.PickerRes;
+import com.example.workerservice.dto.WorkerRes;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -18,21 +18,19 @@ public class KafkaConsumer {
         ZSetOperations<String, Object> redisSortedSet = redisTemplate.opsForZSet();
 
         ObjectMapper objectMapper = new ObjectMapper();
-        PickerRes pickerRes = objectMapper.convertValue(message, PickerRes.class);
-        String pickerId = pickerRes.getPickerId();
-        long turn = pickerRes.getTurn();
-        
-        if (pickerId.equals("1")) {
-            redisSortedSet.add("worker1", pickerRes, (double) turn);
-        }if (pickerId.equals("2")) {
-            redisSortedSet.add("worker2", pickerRes, (double) turn);
-        }if (pickerId.equals("3")) {
-            redisSortedSet.add("worker3", pickerRes, (double) turn);
-        }if (pickerId.equals("4")) {
-            redisSortedSet.add("worker4", pickerRes, (double) turn);
-        }if (pickerId.equals("5")) {
-            redisSortedSet.add("worker5", pickerRes, (double) turn);
+        WorkerRes workerRes = objectMapper.convertValue(message, WorkerRes.class);
+        String workerId = workerRes.getWorkerId();
+
+        int workerInt = Integer.parseInt(workerId) + 1;
+        long turn = workerRes.getTurn();
+
+        StringBuilder sb = new StringBuilder("worker");
+        if (0 < workerInt && workerInt < 6) {
+            String workerBitKey = String.valueOf(sb.append(workerInt));
+
+            redisSortedSet.add(workerBitKey, workerRes, (double) turn);
         }
+
     }
 
     @KafkaListener(topics = "pusherRes")

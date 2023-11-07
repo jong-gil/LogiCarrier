@@ -1,6 +1,6 @@
 package com.example.workerservice;
 
-import com.example.workerservice.dto.PickerRes;
+import com.example.workerservice.dto.WorkerRes;
 import com.example.workerservice.dto.ResponseItem;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -30,8 +30,8 @@ class PickerServiceApplicationTests {
         ArrayList list = new ArrayList<>();
         list.add(item);
 
-        PickerRes pickerRes = PickerRes.builder()
-                .pickerId("1")
+        WorkerRes worker = WorkerRes.builder()
+                .workerId("1")
                 .orderId(1)
                 .shelfId(2)
                 .robotId("2")
@@ -39,7 +39,7 @@ class PickerServiceApplicationTests {
                 .responseItemList(list)
                 .build();
 
-        redisSortedSet.add("worker1", pickerRes, pickerRes.getTurn());
+        redisSortedSet.add("worker1", worker, worker.getTurn());
         redisSortedSet.add("worker1", "2", 1);
         redisSortedSet.add("worker1", "3", 4);
         redisSortedSet.add("worker1", "4", 6);
