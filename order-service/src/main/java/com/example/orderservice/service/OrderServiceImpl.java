@@ -124,12 +124,13 @@ public class OrderServiceImpl implements OrderService {
     }
     //주문 status 변경후 push면 redis에 수량 저장
     @Override
-    public OrderDto complete(long id) {
+    public OrderDto complete(FinishedOrderDto finishedOrderDto) {
         SetOperations<String, Long> setOperations = stockTemplate.opsForSet();
         ValueOperations<Long, Integer> valueOperations = qtyTemplate.opsForValue();
         ModelMapper mapper = new ModelMapper();
         mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
-
+        long id = finishedOrderDto.getOrderId();
+        long userId = finishedOrderDto.getUserId();
         OrderEntity orderEntity = orderRepository.findById(id).orElseThrow();
         int status = orderEntity.getStatus();
         if(status%3 != 1){
@@ -143,7 +144,8 @@ public class OrderServiceImpl implements OrderService {
                 qty += itemEntity.getQty();
                 valueOperations.set(stockId, qty);
             }
-
+            orderEntity.setUserId(userId);
+            orderEntity.setFinishedTime(LocalDateTime.now().toString());
             orderEntity.setStatus(status + 1);
             orderRepository.save(orderEntity);
 

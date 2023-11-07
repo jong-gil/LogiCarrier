@@ -1,5 +1,6 @@
 package com.example.orderservice.service;
 
+import com.example.orderservice.dto.FinishedOrderDto;
 import com.example.orderservice.dto.OrderDetailDto;
 import com.example.orderservice.dto.OrderDto;
 import com.example.orderservice.dto.OrderReq;
@@ -14,6 +15,6 @@ public interface OrderService {
 
     OrderDetailDto get(long id);
 
-    OrderDto complete(long id);
+    OrderDto complete(FinishedOrderDto finishedOrderDto);
     Boolean redisToDB();
 }

@@ -1,9 +1,6 @@
 package com.example.orderservice.controller;
 
-import com.example.orderservice.dto.OrderDetailDto;
-import com.example.orderservice.dto.OrderDto;
-import com.example.orderservice.dto.OrderReq;
-import com.example.orderservice.dto.ResponseOrder;
+import com.example.orderservice.dto.*;
 import com.example.orderservice.massagequeue.OrderProducer;
 import com.example.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -67,10 +64,9 @@ public class OrderController {
         OrderDetailDto orderDetailDto = orderService.get(id);
         return ResponseEntity.status(HttpStatus.OK).body(orderDetailDto);
     }
-    @PostMapping("/orders/{id}")
-    public ResponseEntity<OrderDto> setOrderManually(@PathVariable("id") long id) {
-        log.info("complete order info: " + id);
-        OrderDto orderDto = orderService.complete(id);
+    @PostMapping("/orders")
+    public ResponseEntity<OrderDto> setOrderManually(FinishedOrderDto finishedOrderDto) {
+        OrderDto orderDto = orderService.complete(finishedOrderDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(orderDto);
     }
 
