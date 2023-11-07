@@ -5,6 +5,8 @@ import com.example.loginservice.dto.UserDto;
 import com.example.loginservice.service.UserService;
 import com.example.loginservice.vo.RequestLogin;
 import com.example.loginservice.vo.RequestSignup;
+import com.example.loginservice.vo.ResponseCreatedUser;
+import com.example.loginservice.vo.ResponseUsers;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -23,7 +25,7 @@ public class UserController {
 
     // 전체 회원 조회
     @GetMapping("/users")
-    public List<UserDto> getUsers() {
+    public List<ResponseUsers> getUsers() {
         return userService.getUsers();
     }
 
@@ -41,14 +43,14 @@ public class UserController {
 
     // 회원가입
     @PostMapping("/users")
-    public ResponseEntity<UserDto> createUser(@RequestBody RequestSignup requestSignup) {
+    public ResponseEntity<ResponseCreatedUser> createUser(@RequestBody RequestSignup requestSignup) {
 //        ModelMapper mapper = new ModelMapper();
 //        mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
 //        ModelMapper mapper = customModelMapper.strictMapper();
 
         UserDto createdUserDto = customModelMapper.strictMapper().map(requestSignup, UserDto.class);
 
-        UserDto createdUser = userService.createUser(createdUserDto);
+        ResponseCreatedUser createdUser = userService.createUser(createdUserDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 
