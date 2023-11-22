@@ -30,7 +30,7 @@ public class RobotController {
 
 
 
-    @Scheduled(cron = "0/2 * * * * ?")          //2초에 1턴
+    //@Scheduled(cron = "0/2 * * * * ?")          //2초에 1턴
     @GetMapping("/turn")
     public boolean turn() throws JsonProcessingException {
         ValueOperations <String, String> valueOperations = redisTemplate.opsForValue();
