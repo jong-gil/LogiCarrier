@@ -1,6 +1,7 @@
 package com.example.robotservice.service;
 
 import com.example.robotservice.Repoistory.PickerRepository;
+import com.example.robotservice.Repoistory.RedisRepository;
 import com.example.robotservice.Repoistory.ShelfRepository;
 import com.example.robotservice.Repoistory.ShelfStockRepository;
 import com.example.robotservice.dto.*;
@@ -30,6 +31,7 @@ public class RobotServiceImpl implements RobotService{
     private final PickerRepository pickerRepository;
     private final ShelfStockRepository stockRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisRepository redisRepository;
     private final RedisTemplate<String, String> stringRedisTemplate;
     private final RobotHandler robotHandler;
     private final KafkaProducer kafkaProducer;
@@ -42,12 +44,17 @@ public class RobotServiceImpl implements RobotService{
 
     @Override
     public Boolean findSpace(Payload payload) throws Exception {
-        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
         HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
-
         ObjectMapper objectMapper = new ObjectMapper();
-        Long turn = objectMapper.readValue(valueOperations.get("turn"),Long.class);
-
+        Long turn = 0L;
+        while(redisRepository.lock("turnLock")){
+            Thread.sleep(100);
+        }
+        try {
+            turn = objectMapper.readValue(redisRepository.get("turn"), Long.class);
+        } finally {
+            redisRepository.unlock("turnLock");
+        }
         for(ResponseItem responseItem : payload.getResponseItemList()){
             responseItem.setId(0L);                                     //빈공간 찾기
         }
@@ -167,7 +174,7 @@ public class RobotServiceImpl implements RobotService{
             }
         }
 
-        System.out.println("mincost: " + minCost);
+        log.info("mincost: " + minCost);
         // 이동해야하는 선반 찾고 이동해야하는 위치와 dfsㄲㄲ
         int endX = 0;
         int endY = 0;
@@ -203,15 +210,28 @@ public class RobotServiceImpl implements RobotService{
                 }
             }
         }
+
         for(String key: isUsed){                                                                //schedule 정리
-            Road road = objectMapper.readValue(hashOperations.get("roadHash", key), Road.class);
-            long biggest = 0L;
-            for (long[] schedule : road.getSchedule()){
-                if (schedule[0] > biggest) biggest = schedule[0];
+            if(!key.startsWith("8")){
+                continue;
             }
-            ArrayList<long[]> newSchedule = new ArrayList<>();
-            newSchedule.add(new long[]{0L, biggest});
-            road.setSchedule(newSchedule);
+            while (!redisRepository.lock("roadHash")){
+                Thread.sleep(100);
+            }
+
+            try {
+                Road road = objectMapper.readValue(hashOperations.get("roadHash", key), Road.class);
+                long biggest = 0L;
+                for (long[] schedule : road.getSchedule()) {
+                    if (schedule[0] > biggest) biggest = schedule[0];
+                }
+                ArrayList<long[]> newSchedule = new ArrayList<>();
+                newSchedule.add(new long[]{0L, biggest});
+                road.setSchedule(newSchedule);
+                hashOperations.put("roadHash", key, objectMapper.writeValueAsString(road));
+            }finally {
+                redisRepository.unlock("roadHash");
+            }
         }
         isUsed = new HashSet<>();
 
@@ -341,7 +361,7 @@ public class RobotServiceImpl implements RobotService{
             }
         }
 
-        System.out.println("mincost: " + minCost);
+        log.info("mincost: " + minCost);
         // 이동해야하는 선반 찾고 이동해야하는 위치와 dfsㄲㄲ
         int endX = 0;
         int endY = 0;
@@ -377,7 +397,10 @@ public class RobotServiceImpl implements RobotService{
                 }
             }
         }
-        for(String key: isUsed){                                                                //schedule 정리
+        for(String key: isUsed){                                                                //schedule 정리 주문 섞이는거 방지
+            if(!key.startsWith("8")){
+                continue;
+            }
             Road road = objectMapper.readValue(hashOperations.get("roadHash", key), Road.class);
             long biggest = 0L;
             for (long[] schedule : road.getSchedule()){
@@ -386,6 +409,7 @@ public class RobotServiceImpl implements RobotService{
             ArrayList<long[]> newSchedule = new ArrayList<>();
             newSchedule.add(new long[]{0L, biggest});
             road.setSchedule(newSchedule);
+            hashOperations.put("roadHash", key, objectMapper.writeValueAsString(road));
         }
         isUsed = new HashSet<>();
 

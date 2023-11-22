@@ -1,6 +1,7 @@
 package com.example.robotservice;
 
-import com.example.robotservice.Repoistory.ShelfRepository;
+import com.example.robotservice.Repoistory.RedisRepository;
+import com.example.robotservice.controller.RobotController;
 import com.example.robotservice.entity.Person;
 import com.example.robotservice.Repoistory.PersonRedisRepository;
 import com.example.robotservice.entity.Robot;
@@ -16,6 +17,10 @@ import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
 
 @SpringBootTest
 public class RedisRepositoryTest {
@@ -23,7 +28,10 @@ public class RedisRepositoryTest {
     private RedisTemplate<String, String> redisTemplate;
     @Autowired
     private PersonRedisRepository repo;
-
+    @Autowired
+    private RobotController robotController;
+    @Autowired
+    private RedisRepository redisRepository;
     @Test
     void test() {
         Person person = new Person("Park", 20);
@@ -55,13 +63,12 @@ public class RedisRepositoryTest {
         map.put("firstName", testRobot.toString());
         hashOperations.putAll("key", map);
         String firstName = hashOperations.get("key", "firstName").toString();
-        ModelMapper mapper = new ModelMapper();
         System.out.println(firstName);
 
         //redisTemplate.delete("key");
     }
     @Test
-    public void robotStackTest() throws JsonMappingException, JsonProcessingException {
+    public void robotStackTest() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
 
@@ -103,5 +110,36 @@ public class RedisRepositoryTest {
         //redisTemplate.delete("robotStack");
     }
 
+    @Test
+    public void spinLock() throws  InterruptedException{
+        final ExecutorService executorService = Executors.newFixedThreadPool(32);
+        final CountDownLatch countDownLatch = new CountDownLatch(100);
+        ObjectMapper objectMapper = new ObjectMapper();
+        IntStream.range(0, 100).forEach(e -> executorService.submit(() ->{
+            try {
+                while (!redisRepository.lock("lock")) {
+                    //SpinLock 방식이 redis 에게 주는 부하를 줄여주기위한 sleep
+                    Thread.sleep(100);
+                }
 
+                //lock 획득 성공시
+                try{
+                    Long turn = objectMapper.readValue(redisRepository.get("turn"),Long.class);
+                    turn ++;
+                    System.out.println(turn);
+                    redisRepository.set("turn", objectMapper.writeValueAsString(turn));
+                }catch (JsonProcessingException j){
+                    throw new RuntimeException(j);
+                }finally{
+                    //락 해제
+                    redisRepository.unlock("lock");
+                }
+            }catch (InterruptedException ex){
+                throw new RuntimeException(ex);
+            }finally {
+                countDownLatch.countDown();
+            }
+        }));
+        countDownLatch.await();
+    }
 }
