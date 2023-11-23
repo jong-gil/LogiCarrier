@@ -1,6 +1,7 @@
 package com.example.robotservice.Repoistory;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.common.protocol.types.Field;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
@@ -24,9 +25,12 @@ public class RedisHashRepository {
         return redisTemplate.delete(key);
     }
 
-    public String get(String key){
-        String res = hashOperations.get(key, "lock");
+    public String get(String key, String hashKey){
+        String res = hashOperations.get(key, hashKey);
         return res;
+    }
+    public Boolean hasKey(String key, String hashKey){
+        return hashOperations.hasKey(key, hashKey);
     }
     public void put(String key, String hashKey, String value){
         hashOperations.put(key, hashKey, value);

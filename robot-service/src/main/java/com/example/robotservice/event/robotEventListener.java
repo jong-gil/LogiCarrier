@@ -17,7 +17,13 @@ public class robotEventListener{
     @EventListener
     @Async
     public void getBack(RobotEvent event) throws Exception{
+        robotService.turnLock();
+        robotService.bitLock();
+        robotService.fieldLock();
         log.info("이벤트 받음" + event.getStart().toString() + event.getShelfId().toString());
         robotService.receive(event.getStart(), event.getShelfId());
+        robotService.fieldUnlock();
+        robotService.bitUnlock();
+        robotService.turnUnlock();
     }
 }
