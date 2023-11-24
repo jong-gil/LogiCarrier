@@ -1,6 +1,5 @@
 package com.example.loginservice.vo;
 
-
 import com.example.loginservice.entity.UserType;
 import lombok.Data;
 import lombok.Getter;

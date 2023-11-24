@@ -21,7 +21,6 @@ import java.util.*;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserServiceImpl implements UserService{
-
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserRepository userRepo;
     private final CustomModelMapper customModelMapper;

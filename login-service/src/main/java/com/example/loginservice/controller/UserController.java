@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 
-
 @RestController
 @RequestMapping("/")
 @RequiredArgsConstructor
@@ -43,15 +42,15 @@ public class UserController {
     // 회원가입
     @PostMapping("/users")
     public ResponseEntity<ResponseCreatedUser> createUser(@RequestBody RequestSignup requestSignup) {
+
 //        ModelMapper mapper = new ModelMapper();
 //        mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
 //        ModelMapper mapper = customModelMapper.strictMapper();
 
         UserDto createdUserDto = customModelMapper.strictMapper().map(requestSignup, UserDto.class);
-
+      
         ResponseCreatedUser createdUser = userService.createUser(createdUserDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
-
 
 }

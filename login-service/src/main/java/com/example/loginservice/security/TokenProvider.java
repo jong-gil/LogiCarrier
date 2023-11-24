@@ -24,7 +24,6 @@ public class TokenProvider {
     private final UserRepository userRepo;
     private final Environment env;
 
-
     public TokenProvider(UserService userService, UserRepository userRepo, Environment env) {
         this.userService = userService;
         this.userRepo = userRepo;
