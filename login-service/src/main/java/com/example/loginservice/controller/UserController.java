@@ -3,17 +3,16 @@ package com.example.loginservice.controller;
 import com.example.loginservice.config.CustomModelMapper;
 import com.example.loginservice.dto.UserDto;
 import com.example.loginservice.service.UserService;
-import com.example.loginservice.vo.RequestLogin;
 import com.example.loginservice.vo.RequestSignup;
 import com.example.loginservice.vo.ResponseCreatedUser;
 import com.example.loginservice.vo.ResponseUsers;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 
 
 @RestController
@@ -53,14 +52,6 @@ public class UserController {
         ResponseCreatedUser createdUser = userService.createUser(createdUserDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
-
-/*    // 로그인
-    @PostMapping("/users")
-    public ResponseEntity<UserDto> login(@RequestBody RequestLogin requestLogin) {
-        ModelMapper mapper = customModelMapper.strictMapper();
-        UserDto loginUser = mapper.map(requestLogin, UserDto.class);
-
-    }*/
 
 
 }
