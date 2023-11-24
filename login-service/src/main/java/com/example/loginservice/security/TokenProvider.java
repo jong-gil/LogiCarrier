@@ -11,14 +11,10 @@ import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
-import java.util.Date;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -28,6 +24,7 @@ public class TokenProvider {
     private final UserRepository userRepo;
     private final Environment env;
 
+
     public TokenProvider(UserService userService, UserRepository userRepo, Environment env) {
         this.userService = userService;
         this.userRepo = userRepo;
@@ -36,14 +33,18 @@ public class TokenProvider {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public TokenDto generateToken(Authentication authentication) {
-        String userName = ((User) authentication.getPrincipal()).getUsername();
-        UserDto userDetails = userService.getUserByEmail(userName);
+    public TokenDto generateToken(Authentication authentication, Map<String, Object> claims) {
+
+        String userName = authentication.getName();
+        UserDto userDto = userService.getUserByEmail(userName);
+
         Date expirationDate = new Date(System.currentTimeMillis() +
                 Long.parseLong(Objects.requireNonNull(env.getProperty("token.expiration_time"))));
 
+
         String token = Jwts.builder()
-                .setSubject(userDetails.getUserId())
+                .setSubject(userDto.getUserId())
+                .setClaims(claims)
                 .setExpiration(expirationDate)
                 .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
@@ -55,5 +56,4 @@ public class TokenProvider {
                 .email(userName)
                 .build();
     }
-
 }
