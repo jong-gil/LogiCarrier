@@ -1,6 +1,6 @@
 package com.example.loginservice.vo;
 
-
+import com.example.loginservice.entity.UserType;
 import lombok.Data;
 import lombok.Getter;
 
@@ -13,4 +13,9 @@ public class RequestLogin {
 
     @NotNull
     private String password;
+
+    @NotNull
+    private UserType userType;
+
+    private int positionNum;
 }

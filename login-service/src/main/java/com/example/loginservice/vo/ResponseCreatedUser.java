@@ -1,17 +1,12 @@
-package com.example.loginservice.dto;
+package com.example.loginservice.vo;
 
 import com.example.loginservice.entity.UserType;
 import lombok.Data;
 
 @Data
-public class UserDto {
+public class ResponseCreatedUser {
     private String username;
     private String email;
-    private String password;
     private UserType userType;
-    private int positionNum;
-
     private String userId;
-    private String encryptedPassword;
-
 }
