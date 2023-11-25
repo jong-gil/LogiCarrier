@@ -3,7 +3,6 @@ package com.example.robotservice.handler;
 import com.example.robotservice.dto.MessageReceiveDto;
 import com.example.robotservice.dto.MessageSendDto;
 import com.example.robotservice.entity.Robot;
-//import com.example.robotservice.service.RobotService;
 import com.example.robotservice.event.RobotEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,7 @@ import java.util.HashMap;
 @RequiredArgsConstructor
 public class RobotHandler implements WebSocketHandler {
     private final static HashMap<String, WebSocketSession> sessionMap = new HashMap<>();
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
     private final RedisTemplate<String, String> stringRedisTemplate;
     private final ApplicationEventPublisher applicationEventPublisher;
 
@@ -38,19 +37,22 @@ public class RobotHandler implements WebSocketHandler {
     // 로봇이 보낼 때
     @Override
     public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
         HashOperations<String, Object, Object> hashOperations = redisTemplate.opsForHash();
         SetOperations<String, String> setOperations = stringRedisTemplate.opsForSet();
-
+        ObjectMapper objectMapper = new ObjectMapper();
         // 로봇 선택
         String robotId = session.getAttributes().get("robotId").toString();
         //받은 정보 레디스로
         MessageReceiveDto messageReceiveDto = objectMapper.readValue((String) message.getPayload(), MessageReceiveDto.class);
-        Robot robot = objectMapper.readValue((String) hashOperations.get("robot", robotId), Robot.class);
+        String robotJson = hashOperations.get("robot", robotId).toString();
+
+        Robot robot = objectMapper.readValue(robotJson, Robot.class);
         robot.setBattery(messageReceiveDto.getBatteryPercent());
         robot.setPositionX(messageReceiveDto.getX());
         robot.setPositionY(messageReceiveDto.getY());
         hashOperations.put("robot", robotId, objectMapper.writeValueAsString(robot));
+        System.out.println(robot.toString());
+
         StringBuilder sb = new StringBuilder();
         sb.append(robot.getPositionX());
         sb.append(robot.getPositionY());
@@ -59,7 +61,6 @@ public class RobotHandler implements WebSocketHandler {
             int[] start = new int[]{robot.getPositionX(), robot.getPositionY()};
             Long shelfId = robot.getShelfId();
             applicationEventPublisher.publishEvent(new RobotEvent(start, shelfId));         //robotService.receive(start, shelfId) 이벤트
-
         }
 
     }

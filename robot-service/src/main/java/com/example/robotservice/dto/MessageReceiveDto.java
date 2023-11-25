@@ -2,9 +2,10 @@ package com.example.robotservice.dto;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-@Builder
+@NoArgsConstructor
 public class MessageReceiveDto {
 
     // 로봇 배터리 잔량

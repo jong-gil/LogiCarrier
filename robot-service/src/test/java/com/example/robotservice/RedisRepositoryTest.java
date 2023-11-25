@@ -7,10 +7,8 @@ import com.example.robotservice.Repoistory.PersonRedisRepository;
 import com.example.robotservice.entity.Robot;
 import com.example.robotservice.entity.RobotStack;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.HashOperations;
@@ -50,19 +48,24 @@ public class RedisRepositoryTest {
     }
 
     @Test
-    public void redisTemplateTest() {
+    public void redisTemplateTest() throws JsonProcessingException{
         HashOperations<String, Object, Object> hashOperations = redisTemplate.opsForHash();
+        ObjectMapper objectMapper = new ObjectMapper();
         Map<String, String> map = new HashMap<>();
         Robot testRobot = Robot.builder()
                 .robotId("1")
                 .positionX(0)
                 .positionY(1)
-                .shelfId(null)
+                .shelfId(2L)
                 .battery(100)
                 .build();
-        map.put("firstName", testRobot.toString());
-        hashOperations.putAll("key", map);
-        String firstName = hashOperations.get("key", "firstName").toString();
+        try {
+            map.put("1", objectMapper.writeValueAsString(testRobot));
+        }catch (JsonProcessingException j){
+            System.out.println(j.getMessage());
+        }
+        hashOperations.putAll("robotHash", map);
+        String firstName = objectMapper.readValue(hashOperations.get("robotHash", "1").toString(), Robot.class).toString();
         System.out.println(firstName);
 
         //redisTemplate.delete("key");
