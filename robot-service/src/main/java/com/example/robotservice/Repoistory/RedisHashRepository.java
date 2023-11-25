@@ -13,7 +13,6 @@ import java.time.Duration;
 public class RedisHashRepository {
 
     private final RedisTemplate<String, String> redisTemplate;
-    private final HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
     public Boolean lock(String key) {
         return redisTemplate
                 .opsForHash()
@@ -26,13 +25,16 @@ public class RedisHashRepository {
     }
 
     public String get(String key, String hashKey){
+        HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
         String res = hashOperations.get(key, hashKey);
         return res;
     }
     public Boolean hasKey(String key, String hashKey){
+        HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
         return hashOperations.hasKey(key, hashKey);
     }
     public void put(String key, String hashKey, String value){
+        HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
         hashOperations.put(key, hashKey, value);
     }
 

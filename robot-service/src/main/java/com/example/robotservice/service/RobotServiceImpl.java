@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.core.env.Environment;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -207,23 +208,32 @@ public class RobotServiceImpl implements RobotService {
             }
         }
 
-        //피커위치 받아오기
+        //푸셔위치 받아오기
         request.put(0L, new ArrayList<>());
         request.get(0L).add(1);
         request.get(0L).add(0);
 
         selected.put(0L, new ArrayDeque<>());
-        List<Picker> pickerList = pickerRepository.findByAssignmentLessThan(10);
-        for (Picker picker : pickerList) {
-            CandidateDto candidateDto = CandidateDto.build(0L,
-                    100000 + picker.getPickerId(),
-                    picker.getX(),
-                    picker.getY()
-            );
-            candidateDtoList.add(candidateDto);
+        String workerBit = redisRepository.get("workerBit");
+        String progressBit = redisRepository.get("progressBit");         //redis에 캐쉬된 가동가능한 picker찾기
+        int pusherCnt = 0;
+        for (int i = 0; i < workerBit.length(); i++) {
+            if (workerBit.charAt(i) == '1' && progressBit.charAt(i) == '0') {
+                Picker picker = pickerRepository.findById(Long.valueOf(i))
+                        .orElseThrow(() -> new NoSuchElementException("pusher not exist!"));
+                CandidateDto candidateDto = CandidateDto.build(0L,
+                        100000 + picker.getPickerId(),
+                        picker.getX(),
+                        picker.getY()
+                );
+                candidateDtoList.add(candidateDto);
+                pusherCnt ++;
+            }
         }
+
+
         //물건을 받을수 있는 피커가 없다면 false 반환
-        if (pickerList.isEmpty()) {
+        if (pusherCnt == 0) {
             return false;
         }
 
@@ -390,17 +400,26 @@ public class RobotServiceImpl implements RobotService {
         request.get(0L).add(0);
 
         selected.put(0L, new ArrayDeque<>());
-        List<Picker> pickerList = pickerRepository.findByAssignmentLessThan(10);
-        for (Picker picker : pickerList) {
-            CandidateDto candidateDto = CandidateDto.build(0L,
-                    100000 + picker.getPickerId(),
-                    picker.getX(),
-                    picker.getY()
-            );
-            candidateDtoList.add(candidateDto);
+        String workerBit = redisRepository.get("workerBit");
+        String progressBit = redisRepository.get("progressBit");         //redis에 캐쉬된 가동가능한 picker찾기
+        int pickerCnt = 0;
+        for (int i = 0; i < workerBit.length(); i++) {
+            if (workerBit.charAt(i) == '0' && progressBit.charAt(i) == '0') {
+                Picker picker = pickerRepository.findById(Long.valueOf(i))
+                        .orElseThrow(() -> new NoSuchElementException("picker not exist!"));
+                CandidateDto candidateDto = CandidateDto.build(0L,
+                        100000 + picker.getPickerId(),
+                        picker.getX(),
+                        picker.getY()
+                );
+                candidateDtoList.add(candidateDto);
+                pickerCnt ++;
+            }
         }
+
+
         //물건을 받을수 있는 피커가 없다면 false 반환
-        if (pickerList.isEmpty()) {
+        if (pickerCnt == 0) {
             return false;
         }
 
