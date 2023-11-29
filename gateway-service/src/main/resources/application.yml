@@ -4,14 +4,10 @@ server:
 
 eureka:
   client:
-    # ???? ????
     register-with-eureka: true
-    # ???? ??? ???? ??? ??? ??? ???? ??
     fetch-registry: true
     service-url:
       defaultZone: http://localhost:8761/eureka
-
-
 
 spring:
   application:
@@ -32,11 +28,30 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/order-service/(?<segment>.*), /$\{segment}
+            - name: CustomFilter
+            - name: LoggingFilter
+              args:
+                baseMessage: order-service operated
+                preLogger: true
+                postLogger: true
+
+        - id: worker-service
+          uri: lb://WORKER-SERVICE
+          predicates:
+            - PATH=/worker-service/**
+          filters:
+            - RewritePath=/worker-service/(?<segment>.*), /$\{segment}
+            - name: CustomFilter
+            - name: LoggingFilter
+              args:
+                baseMessage: worker-service operated
+                preLogger: true
+                postLogger: true
 
         - id: login-service
           uri: lb://LOGIN-SERVICE
           predicates:
-            - Path=/login-service/**
+            - Path=/login-service/login
             - Method=POST
           filters:
             - RemoveRequestHeader=Cookie
@@ -46,7 +61,7 @@ spring:
           uri: lb://LOGIN-SERVICE
           predicates:
             - Path=/login-service/**
-            - Method=GET
+            - Method=GET, POST
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/login-service/(?<segment>.*), /$\{segment}
