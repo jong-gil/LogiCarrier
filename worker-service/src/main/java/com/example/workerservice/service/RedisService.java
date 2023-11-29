@@ -41,7 +41,7 @@ public class RedisService {
         return "WRONG workerId";
     }
 
-    public String setProgressBit(Long workerId) {
+
         if (-1 < workerId && workerId < 5) {
             ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
             String progressBit = redisBit.get("progressBit");
