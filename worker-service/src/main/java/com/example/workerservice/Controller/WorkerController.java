@@ -33,7 +33,7 @@ public class WorkerController {
         return redisService.getBit("progressBit");
     }
 
-    @PostMapping("")
+    @PostMapping("/setBits")
     public void setInitialBits() {
         redisService.setInitialWorkerBit();
         redisService.setInitialProgressBit();
