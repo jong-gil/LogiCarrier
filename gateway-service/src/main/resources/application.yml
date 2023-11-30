@@ -24,7 +24,6 @@ spring:
           uri: lb://WORKER-SERVICE
           predicates:
             - Path=/worker-service/**
-            - Method=GET, POST
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/worker-service/(?<segment>.*), /$\{segment}
@@ -65,6 +64,23 @@ spring:
             - RemoveRequestHeader=Cookie
             - RewritePath=/login-service/(?<segment>.*), /$\{segment}
             - AuthorizationHeaderFilter
+
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/order-service/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
+
+        - id: robot-service
+          uri: lb://ROBOT-SERVICE
+          predicates:
+            - Path=/robot-service/**
+            - Method=GET, POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
 
 token:
   secret: user_token_for_JSON_Web_Token_and_must_be_longer_to_guarantee_security_of_the_service_CHEER_UP
