@@ -1,0 +1,86 @@
+server:
+  port: 8000
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      default-filters:
+        - name: GlobalFilter
+          args:
+            baseMessage: Spring Cloud Gateway Global Filter
+            preLogger: true
+            postLogger: true
+      routes:
+        - id: worker-service
+          uri: lb://WORKER-SERVICE
+          predicates:
+            - Path=/worker-service/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/worker-service/(?<segment>.*), /$\{segment}
+
+        - id: login-service
+          uri: lb://LOGIN-SERVICE
+          predicates:
+            - Path=/login-service/health_check
+            - Method=GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
+
+        - id: login-service
+          uri: lb://LOGIN-SERVICE
+          predicates:
+            - Path=/login-service/users
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
+
+        - id: login-service
+          uri: lb://LOGIN-SERVICE
+          predicates:
+            - Path=/login-service/login
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
+
+        - id: login-service
+          uri: lb://LOGIN-SERVICE
+          predicates:
+            - Path=/login-service/**
+            - Method=GET, POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
+            - AuthorizationHeaderFilter
+
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/order-service/**
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
+
+        - id: robot-service
+          uri: lb://ROBOT-SERVICE
+          predicates:
+            - Path=/robot-service/**
+            - Method=GET, POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
+
+token:
+  secret: user_token_for_JSON_Web_Token_and_must_be_longer_to_guarantee_security_of_the_service_CHEER_UP

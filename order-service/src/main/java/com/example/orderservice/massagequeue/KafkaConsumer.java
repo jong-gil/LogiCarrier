@@ -26,6 +26,7 @@ public class KafkaConsumer {
     private final StockRepository stockRepository;
 
     private final KafkaTemplate<String, String> kafkaTemplate;
+
     // 배송준비된 주문의 준비시간 status  변경후 저장
     @KafkaListener(topics = "itemFinsih")
     public void orderFinish(String message) throws IOException {

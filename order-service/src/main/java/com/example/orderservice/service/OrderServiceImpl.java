@@ -22,7 +22,6 @@ import java.util.*;
 @RequiredArgsConstructor
 @Transactional
 public class OrderServiceImpl implements OrderService {
-
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
     private final StockRepository stockRepository;
@@ -63,6 +62,7 @@ public class OrderServiceImpl implements OrderService {
                     ItemEntity savedItemEntity = itemRepository.save(itemEntity);
                     ResponseItem responseItem = mapper.map(savedItemEntity, ResponseItem.class);
                     responseItemList.add(responseItem);
+
                     //캐싱
                     if (setOperations.isMember("stocks",stockId)){
                         int stockQty = valueOperations.get(stockId);
@@ -100,6 +100,7 @@ public class OrderServiceImpl implements OrderService {
         e.printStackTrace();
         return null;
     }
+
     //주문 정보와 제품 설명 리턴
     @Override
     public OrderDetailDto get(long id) {
