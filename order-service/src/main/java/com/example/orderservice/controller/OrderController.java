@@ -64,7 +64,7 @@ public class OrderController {
         OrderDetailDto orderDetailDto = orderService.get(id);
         return ResponseEntity.status(HttpStatus.OK).body(orderDetailDto);
     }
-    @PostMapping("/orders")
+    @PostMapping("/orders/complete")
     public ResponseEntity<OrderDto> setOrderManually(FinishedOrderDto finishedOrderDto) {
         OrderDto orderDto = orderService.complete(finishedOrderDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(orderDto);
