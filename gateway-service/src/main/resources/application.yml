@@ -1,4 +1,3 @@
-
 server:
   port: 8000
 
@@ -21,32 +20,32 @@ spring:
             preLogger: true
             postLogger: true
       routes:
-        - id: order-service
-          uri: lb://ORDER-SERVICE
-          predicates:
-            - Path=/order-service/**
-          filters:
-            - RemoveRequestHeader=Cookie
-            - RewritePath=/order-service/(?<segment>.*), /$\{segment}
-            - name: CustomFilter
-            - name: LoggingFilter
-              args:
-                baseMessage: order-service operated
-                preLogger: true
-                postLogger: true
-
         - id: worker-service
           uri: lb://WORKER-SERVICE
           predicates:
-            - PATH=/worker-service/**
+            - Path=/worker-service/**
+            - Method=GET, POST
           filters:
+            - RemoveRequestHeader=Cookie
             - RewritePath=/worker-service/(?<segment>.*), /$\{segment}
-            - name: CustomFilter
-            - name: LoggingFilter
-              args:
-                baseMessage: worker-service operated
-                preLogger: true
-                postLogger: true
+
+        - id: login-service
+          uri: lb://LOGIN-SERVICE
+          predicates:
+            - Path=/login-service/health_check
+            - Method=GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
+
+        - id: login-service
+          uri: lb://LOGIN-SERVICE
+          predicates:
+            - Path=/login-service/users
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
 
         - id: login-service
           uri: lb://LOGIN-SERVICE
