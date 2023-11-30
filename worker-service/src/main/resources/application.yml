@@ -3,13 +3,13 @@ server:
 
 spring:
   application:
-    name: picker-service
+    name: worker-service
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
     generate-ddl: true
-
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/picker
@@ -21,10 +21,10 @@ spring:
     port: 6379
 
 eureka:
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
   client:
     register-with-eureka: true
     fetch-registry: true
     service-url:
       defaultZone: http://127.0.0.1:8761/eureka
-    instance:
-      instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
