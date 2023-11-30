@@ -71,7 +71,7 @@ spring:
             - Path=/order-service/**
           filters:
             - RemoveRequestHeader=Cookie
-            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
+            - RewritePath=/order-service/(?<segment>.*), /$\{segment}
 
         - id: robot-service
           uri: lb://ROBOT-SERVICE
@@ -80,7 +80,7 @@ spring:
             - Method=GET, POST
           filters:
             - RemoveRequestHeader=Cookie
-            - RewritePath=/login-service/(?<segment>.*), /$\{segment}
+            - RewritePath=/robot-service/(?<segment>.*), /$\{segment}
 
 token:
   secret: user_token_for_JSON_Web_Token_and_must_be_longer_to_guarantee_security_of_the_service_CHEER_UP
