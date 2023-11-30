@@ -10,11 +10,11 @@ import java.util.List;
 
 @Data
 @RequiredArgsConstructor
-public class OrderDto {
+public class OrderDetailDto {
     private long id;
     private String createdTime;
     private String finishedTime;
     private Integer status;
     private Long userId;
-    private List<ResponseItem> responseItemList;
+    private List<DetailResponseItem> responseItemList;
 }
