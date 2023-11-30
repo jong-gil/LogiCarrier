@@ -29,7 +29,7 @@ public class UserController {
     @GetMapping("/health_check")
     public String status(HttpServletRequest request) {
         log.info("Server port={}", request.getServerPort());
-        return String.format("It's working in Worker Service on PORT %s"
+        return String.format("It's working in Login Service on PORT %s"
                 , env.getProperty("local.server.port"));
     }
 
