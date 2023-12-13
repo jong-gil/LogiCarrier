@@ -4,7 +4,23 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9120a4e3-f965-46e4-82af-bc474087cfeb" name="Changes" comment="" />
+    <list default="true" id="9120a4e3-f965-46e4-82af-bc474087cfeb" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/eureka/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/eureka/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gateway-service/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/gateway-service/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gateway-service/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/gateway-service/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/login-service/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/login-service/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/order-service/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/order-service/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/order-service/src/test/java/com/example/orderservice/OrderServiceApplicationTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/order-service/src/test/java/com/example/orderservice/OrderServiceApplicationTests.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/robot-service/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/robot-service/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/robot-service/src/main/java/com/example/robotservice/massagequeue/KafkaConsumerConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/robot-service/src/main/java/com/example/robotservice/massagequeue/KafkaConsumerConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/robot-service/src/main/java/com/example/robotservice/massagequeue/KafkaProducerConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/robot-service/src/main/java/com/example/robotservice/massagequeue/KafkaProducerConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/robot-service/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/robot-service/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker-service/src/main/java/com/example/workerservice/messagequeue/KafkaConsumerConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/worker-service/src/main/java/com/example/workerservice/messagequeue/KafkaConsumerConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker-service/src/main/java/com/example/workerservice/messagequeue/KafkaProducerConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/worker-service/src/main/java/com/example/workerservice/messagequeue/KafkaProducerConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker-service/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/worker-service/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/worker-service/src/test/java/com/example/workerservice/PickerServiceApplicationTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/worker-service/src/test/java/com/example/workerservice/PickerServiceApplicationTests.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -24,18 +40,18 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">

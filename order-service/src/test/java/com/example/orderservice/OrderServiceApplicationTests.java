@@ -10,12 +10,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 class OrderServiceApplicationTests {
 	@Autowired
 	private RedisTemplate<String, Object> redisTemplate;
-	@Test
-	void contextLoads() {
-	}
-	@Test
-	void insert(){
 
-	}
 
 }

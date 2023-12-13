@@ -2,6 +2,8 @@ package com.example.workerservice;
 
 import com.example.workerservice.dto.WorkerRes;
 import com.example.workerservice.dto.ResponseItem;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +19,13 @@ import java.util.ArrayList;
 class PickerServiceApplicationTests {
 
     @Autowired
-    RedisTemplate<String, Object> redisTemplate;
+    RedisTemplate<String, String> redisTemplate;
 
 
     @Test
     void addToWorker() {
-        ZSetOperations<String, Object> redisSortedSet = redisTemplate.opsForZSet();
+        ZSetOperations<String, String> redisSortedSet = redisTemplate.opsForZSet();
+        ObjectMapper objectMapper = new ObjectMapper();
         ResponseItem item = ResponseItem.builder()
                 .id(1)
                 .qty(2)
@@ -38,15 +41,20 @@ class PickerServiceApplicationTests {
                 .turn(2)
                 .responseItemList(list)
                 .build();
+        try{
 
-        redisSortedSet.add("worker1", worker, worker.getTurn());
-        redisSortedSet.add("worker1", "2", 1);
-        redisSortedSet.add("worker1", "3", 4);
-        redisSortedSet.add("worker1", "4", 6);
+            String workerToString = objectMapper.writeValueAsString(worker);
+            redisSortedSet.add("worker1", workerToString, worker.getTurn());
+            redisSortedSet.add("worker1", "2", 1);
+            redisSortedSet.add("worker1", "3", 4);
+            redisSortedSet.add("worker1", "4", 6);
 
-        String firstPicked = redisSortedSet.popMin("worker1").getValue().toString();
-
-        Assertions.assertThat(firstPicked).isEqualTo("2");
+            String firstPicked = redisSortedSet.popMin("worker1").getValue().toString();
+            System.out.println(firstPicked);
+            Assertions.assertThat(firstPicked).isEqualTo("2");
+        }catch (JsonProcessingException e){
+            e.printStackTrace();
+        }
     }
 
 }
