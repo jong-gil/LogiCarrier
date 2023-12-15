@@ -3,13 +3,12 @@ os: linux
 files:
   - source: /
     destination: /opt/worker-service
+    overwrite: yes
 permissions:
   - object: /opt/worker-service/
     owner: ubuntu
     group: ubuntu
     mode: 755
 hooks:
-  ApplicationStop:
-    - location: kill_process.sh
   ApplicationStart:
     - location: run_java.sh
