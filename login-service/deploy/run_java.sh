@@ -14,7 +14,7 @@ sudo docker rm "$service-1"
 
 sudo docker run -d --name "$service-1" --network logicarrier-network \
  -e "eureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/" \
- -e "spring.datasource.url=jdbc:mysql://mysql:3306/logiCarrier" \
+ -e "spring.datasource.url=jdbc:mysql://logicarrier-db:3306/logiCarrier" \
   $service:$version
 echo "successfully run!"
 sudo docker stop "$service-2"
