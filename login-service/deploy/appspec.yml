@@ -3,6 +3,7 @@ os: linux
 files:
   - source: /
     destination: /opt/login-service
+    overwrite: yes
 permissions:
   - object: /opt/login-service/
     owner: ubuntu

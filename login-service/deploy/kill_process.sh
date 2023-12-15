@@ -11,4 +11,3 @@ sudo docker run -d --name "$service-2" --network logicarrier-network -e "eureka.
 echo "successfully run!"
 sudo docker stop "$service-1"
 sudo docker rm "$service-1"
-sudo docker image prune
