@@ -3,6 +3,7 @@ os: linux
 files:
   - source: /
     destination: /opt/robot-service
+    overwrite: yes
 permissions:
   - object: /opt/robot-service/
     owner: ubuntu
