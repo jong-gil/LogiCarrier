@@ -3,6 +3,7 @@ os: linux
 files:
   - source: /
     destination: /opt/gateway-service
+    overwrite: yes
 permissions:
   - object: /opt/gateway-service/
     owner: ubuntu

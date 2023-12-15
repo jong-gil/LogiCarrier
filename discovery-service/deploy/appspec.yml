@@ -3,6 +3,7 @@ os: linux
 files:
   - source: /
     destination: /opt/discovery-service
+    overwrite: yes
 permissions:
   - object: /opt/discovery-service/
     owner: ubuntu
