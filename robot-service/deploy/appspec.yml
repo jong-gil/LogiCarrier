@@ -10,7 +10,5 @@ permissions:
     group: ubuntu
     mode: 755
 hooks:
-  ApplicationStop:
-    - location: kill_process.sh
   ApplicationStart:
     - location: run_java.sh
