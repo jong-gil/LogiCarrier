@@ -16,7 +16,6 @@ import static java.time.LocalDateTime.now;
 
 @Data
 @Entity
-@Builder
 @Table(name = "orders")
 public class OrderEntity {
     @Id
@@ -29,7 +28,9 @@ public class OrderEntity {
     @Column(nullable = true)
     private String finishedTime;
     private Long userId;
-
+    @JsonBackReference
+    @OneToMany(mappedBy = "orderEntity", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<ItemEntity> itemEntityList;
     @Builder
     public OrderEntity(){
         this.status = 0;

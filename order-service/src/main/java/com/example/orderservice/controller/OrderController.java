@@ -1,8 +1,6 @@
 package com.example.orderservice.controller;
 
-import com.example.orderservice.dto.OrderDto;
-import com.example.orderservice.dto.OrderReq;
-import com.example.orderservice.dto.ResponseOrder;
+import com.example.orderservice.dto.*;
 import com.example.orderservice.massagequeue.OrderProducer;
 import com.example.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -12,13 +10,16 @@ import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/order-service")
+@EnableScheduling
+@RequestMapping("")
 @Slf4j
 @RequiredArgsConstructor
 public class OrderController {
@@ -58,10 +59,26 @@ public class OrderController {
     }
 
     @GetMapping("/orders/{id}")
-    public ResponseEntity<OrderDto> getOrderManually(@PathVariable("id") long id) {
+    public ResponseEntity<OrderDetailDto> getOrderManually(@PathVariable("id") long id) {
         log.info("read order info: " + id);
-        OrderDto orderDto = orderService.get(id);
+        OrderDetailDto orderDetailDto = orderService.get(id);
+        return ResponseEntity.status(HttpStatus.OK).body(orderDetailDto);
+    }
+    @PostMapping("/orders/complete")
+    public ResponseEntity<OrderDto> setOrderManually(FinishedOrderDto finishedOrderDto) {
+        OrderDto orderDto = orderService.complete(finishedOrderDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(orderDto);
     }
 
+
+    @Scheduled(cron = "0 0 1 * * *")
+    @PostMapping("/redis")
+    public ResponseEntity<Boolean> redisToDB(){
+        try{
+            orderService.redisToDB();
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.LOCKED).body(false);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(true);
+    }
 }

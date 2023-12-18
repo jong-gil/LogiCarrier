@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@Builder
 @RequiredArgsConstructor
 public class OrderDto {
     private long id;

@@ -4,6 +4,8 @@ import com.example.loginservice.config.CustomModelMapper;
 import com.example.loginservice.dto.UserDto;
 import com.example.loginservice.entity.UserEntity;
 import com.example.loginservice.repository.UserRepository;
+import com.example.loginservice.vo.ResponseCreatedUser;
+import com.example.loginservice.vo.ResponseUsers;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.userdetails.User;
@@ -13,10 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -50,20 +49,20 @@ public class UserServiceImpl implements UserService{
                 , new ArrayList<>());
     }
     @Override
-    public List<UserDto> getUsers() {
+    public List<ResponseUsers> getUsers() {
         ModelMapper mapper = customModelMapper.strictMapper();
 
-        List<UserDto> result = new ArrayList<>();
+        List<ResponseUsers> result = new ArrayList<>();
         List<UserEntity> userList = userRepo.findAll();
         userList.forEach(v -> {
-            result.add(mapper.map(v, UserDto.class));
+            result.add(mapper.map(v, ResponseUsers.class));
         });
         return result;
     }
 
     @Override
     @Transactional
-    public UserDto createUser(UserDto userDto) {
+    public ResponseCreatedUser createUser(UserDto userDto) {
         userDto.setUserId(UUID.randomUUID().toString());
 
 //        ModelMapper mapper = new ModelMapper();
@@ -75,7 +74,7 @@ public class UserServiceImpl implements UserService{
 
         userRepo.save(createdUserEntity);
 
-        return mapper.map(createdUserEntity, UserDto.class);
+        return mapper.map(createdUserEntity, ResponseCreatedUser.class);
     }
 
     @Override
@@ -87,5 +86,5 @@ public class UserServiceImpl implements UserService{
         }
         return mapper.map(userEntity.get(), UserDto.class);
     }
-
 }
+

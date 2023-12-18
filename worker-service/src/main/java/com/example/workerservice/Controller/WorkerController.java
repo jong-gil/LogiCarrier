@@ -2,13 +2,26 @@ package com.example.workerservice.Controller;
 
 import com.example.workerservice.service.RedisService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/worker")
+@Slf4j
+@RequestMapping("/")
 public class WorkerController {
     private final RedisService redisService;
+    private final Environment env;
+
+    @GetMapping("/health_check")
+    public String status(HttpServletRequest request) {
+        log.info("Server port={}", request.getServerPort());
+        return String.format("It's working in Worker Service on PORT %s"
+                , env.getProperty("local.server.port"));
+    }
 
     @GetMapping("/workerBit")
     public String getWorkerBit() {
@@ -20,7 +33,7 @@ public class WorkerController {
         return redisService.getBit("progressBit");
     }
 
-    @PostMapping("")
+    @PostMapping("/setBits")
     public void setInitialBits() {
         redisService.setInitialWorkerBit();
         redisService.setInitialProgressBit();

@@ -31,7 +31,7 @@ public class RedisService {
     }
 
     public String setWorkerBit(Long workerId) {
-        if (workerId < 0 || workerId > 5) {
+        if (-1 < workerId && workerId < 5) {
             ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
             String workerBit = redisBit.get("workerBit");
             String changedWorkerBit = getChangedString(workerId, workerBit);
@@ -40,14 +40,15 @@ public class RedisService {
         }
         return "WRONG workerId";
     }
-
     public String setProgressBit(Long workerId) {
-        ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
-        String progressBit = redisBit.get("progressBit");
-        String changedProgressBit = getChangedString(workerId, progressBit);
-        redisBit.set("progressBit", changedProgressBit);
-        return "Worker's Progress status has Changed";
-
+        if (-1 < workerId && workerId < 5) {
+            ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
+            String progressBit = redisBit.get("progressBit");
+            String changedProgressBit = getChangedString(workerId, progressBit);
+            redisBit.set("progressBit", changedProgressBit);
+            return "Worker's Progress status has Changed";
+        }
+        return "WRONG workerId";
     }
 
     private String getChangedString(Long workerId, String redisBit) {

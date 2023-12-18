@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.example'
-version = '0.0.1-SNAPSHOT'
+version = '1.0.2'
 
 java {
 	sourceCompatibility = '11'
@@ -27,8 +27,8 @@ ext {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	//implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'
@@ -40,6 +40,9 @@ dependencies {
 	implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: '2.8.0'
 	implementation group: 'org.modelmapper', name: 'modelmapper', version: '3.1.1'
 
+	//Redis
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
 }
 
 dependencyManagement {
@@ -50,4 +53,7 @@ dependencyManagement {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+jar{
+	enabled = false
 }
