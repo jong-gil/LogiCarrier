@@ -25,6 +25,7 @@ public class RobotController {
     private final RobotService robotService;
     private final Environment env;
 
+
     @GetMapping("/health_check")
     public String status(HttpServletRequest request) {
         log.info("Server port={}", request.getServerPort());
@@ -35,7 +36,6 @@ public class RobotController {
     @Scheduled(cron = "0/2 * * * * ?")          //2초에 1턴
     @GetMapping("/turn")
     public boolean turn() throws JsonProcessingException, InterruptedException {
-
         return robotService.turn();
     }
 
