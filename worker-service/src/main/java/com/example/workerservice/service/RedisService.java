@@ -30,12 +30,17 @@ public class RedisService {
         redisBit.set("workerBit", String.valueOf(workerStr));
     }
 
-    public String setWorkerBit(Long workerId) {
-        if (-1 < workerId && workerId < 5) {
+    public String setWorkerBit(int positionNum, String userType) {
+        if (-1 < positionNum && positionNum < 5) {
             ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
             String workerBit = redisBit.get("workerBit");
-            String changedWorkerBit = getChangedString(workerId, workerBit);
-            redisBit.set("workerBit", changedWorkerBit);
+            StringBuilder redisBitStr = new StringBuilder(workerBit);
+            if (userType.equals("picker")) {
+                redisBitStr.setCharAt(positionNum, '1');
+            } else if (userType.equals("pusher")) {
+                redisBitStr.setCharAt(positionNum, '2');
+            }
+            redisBit.set("workerBit", redisBitStr.toString());
             return "Worker Position has Changed";
         }
         return "WRONG workerId";
