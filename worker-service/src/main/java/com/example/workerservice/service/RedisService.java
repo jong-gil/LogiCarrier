@@ -2,9 +2,11 @@ package com.example.workerservice.service;
 
 import com.example.workerservice.entity.WorkerEntity;
 import com.example.workerservice.repository.WorkerRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,10 +47,21 @@ public class RedisService {
         }
         return "WRONG workerId";
     }
-    public String setProgressBit(Long workerId) {
-        if (-1 < workerId && workerId < 5) {
-            ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
-            String progressBit = redisBit.get("progressBit");
+    public String setProgressBit(Long workerId) throws Exception {
+        ZSetOperations<String, String> redisSortedSet = redisTemplate.opsForZSet();
+        ValueOperations<String, String> redisBit = redisTemplate.opsForValue();
+        StringBuilder sb = new StringBuilder("worker");
+        String workerBitKey = String.valueOf(sb.append(workerId));
+
+        String redisTurn = redisBit.get("turn");
+        ObjectMapper objectMapper = new ObjectMapper();
+        long now = objectMapper.readValue(redisTurn, Long.class);
+        int setSize = redisSortedSet.rangeByScore(workerBitKey, 0L, now).size();
+        String progressBit = redisBit.get("progressBit");
+        char status = progressBit.charAt(workerId.intValue());
+
+        if (-1 < workerId && workerId < 5 && ((setSize > 3 && status == '0')||(setSize <= 3 && status == '1'))) {
+
             String changedProgressBit = getChangedString(workerId, progressBit);
             redisBit.set("progressBit", changedProgressBit);
             return "Worker's Progress status has Changed";

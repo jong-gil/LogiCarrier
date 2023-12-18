@@ -45,7 +45,7 @@ public class WorkerController {
     }
 
     @PostMapping("/progressBit/{workerId}")
-    public String setProgressBit(@PathVariable("workerId") Long id) {
+    public String setProgressBit(@PathVariable("workerId") Long id) throws Exception {
         return redisService.setProgressBit(id);
     }
 }
