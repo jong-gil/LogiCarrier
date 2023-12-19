@@ -24,10 +24,11 @@ public class WorkerServiceImpl implements WorkerService{
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper mapper;
     private final KafkaProducer kafkaProducer;
+    private final RedisService redisService;
 
     @Override
     @Transactional
-    public String pickItem(String workerId, long itemId) {
+    public String pickItem(String workerId, long itemId) throws Exception {
         ZSetOperations<String, Object> redisSortedSet = redisTemplate.opsForZSet();
         StringBuilder sb = new StringBuilder("worker");
 
@@ -64,7 +65,7 @@ public class WorkerServiceImpl implements WorkerService{
         return "worker is NOT PRESENT";
     }
 
-    private String process(long itemId, Object target, Object nextTarget, String workerId){
+    private String process(long itemId, Object target, Object nextTarget, String workerId) throws Exception {
         WorkerRes targetPayload = mapper.convertValue(target, WorkerRes.class);
         WorkerRes nextTargetPayload = mapper.convertValue(nextTarget, WorkerRes.class);
 
@@ -81,6 +82,8 @@ public class WorkerServiceImpl implements WorkerService{
                     .responseItemList(itemList)
                     .build();
             kafkaProducer.pickedItem("PickerToRobot", pickedItem);
+            redisService.setProgressBit(Long.parseLong(workerId));
+
             return itemId + "is Picked";
         } // 다르다면 하나의 주문이 처리된 것 -> orderService로 complete 보냄
         else {
@@ -98,6 +101,7 @@ public class WorkerServiceImpl implements WorkerService{
                     .orderStatus(true)
                     .build();
             kafkaProducer.orderCompleted("PickerToOrder", orderCompleted);
+            redisService.setProgressBit(Long.parseLong(workerId));
             return itemId + "is Picked"
                     + "%n order no." + targetPayload.getOrderId() + "is Completed";
         }
