@@ -32,3 +32,6 @@ eureka:
     fetch-registry: true
     service-url:
       defaultZone: http://127.0.0.1:8761/eureka
+
+order_service:
+  url: http://127.0.0.1:8080/order-service/orders/complete

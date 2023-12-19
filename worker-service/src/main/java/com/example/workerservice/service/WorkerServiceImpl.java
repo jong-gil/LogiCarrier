@@ -1,5 +1,6 @@
 package com.example.workerservice.service;
 
+import com.example.workerservice.dto.OrderDto;
 import com.example.workerservice.dto.WorkerReq;
 import com.example.workerservice.dto.WorkerRes;
 import com.example.workerservice.dto.ResponseItem;
@@ -8,12 +9,19 @@ import com.example.workerservice.messagequeue.KafkaProducer;
 import com.example.workerservice.repository.WorkerRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.env.Environment;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -25,6 +33,8 @@ public class WorkerServiceImpl implements WorkerService{
     private final ObjectMapper mapper;
     private final KafkaProducer kafkaProducer;
     private final RedisService redisService;
+    private final RestTemplate restTemplate;
+    private final Environment env;
 
     @Override
     @Transactional
@@ -100,10 +110,15 @@ public class WorkerServiceImpl implements WorkerService{
                     .workerId(workerId)
                     .orderStatus(true)
                     .build();
-            kafkaProducer.orderCompleted("PickerToOrder", orderCompleted);
+            completedOrder(orderCompleted);
             redisService.setProgressBit(Long.parseLong(workerId));
             return itemId + "is Picked"
                     + "%n order no." + targetPayload.getOrderId() + "is Completed";
         }
+    }
+
+    private void completedOrder(WorkerReq workerReq) {
+        String orderUrl = String.format(env.getProperty("order_service.url"));
+        ResponseEntity<OrderDto> responseData = restTemplate.postForEntity(orderUrl, workerReq, OrderDto.class);
     }
 }
