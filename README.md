@@ -23,11 +23,11 @@
 
 #### 아키텍처
 
-![logiCarrier-architecture.jpg](C:\Users\bosung\Desktop\LogiCarrier\ReadMe\logiCarrier-architecture.jpg)
+![logiCarrier-architecture.jpg](https://github.com/boham97/LogiCarrier/blob/master/ReadMe/logiCarrier-architecture.jpg?raw=true)
 
 #### ERD
 
-![321093489-5e68b296-7981-47db-a1ca-923f69b12f61.png](C:\Users\bosung\Desktop\LogiCarrier\ReadMe\321093489-5e68b296-7981-47db-a1ca-923f69b12f61.png)
+![321093489-5e68b296-7981-47db-a1ca-923f69b12f61.png](https://github.com/boham97/LogiCarrier/blob/master/ReadMe/321093489-5e68b296-7981-47db-a1ca-923f69b12f61.png?raw=true)
 
 #### 주요기능
 
