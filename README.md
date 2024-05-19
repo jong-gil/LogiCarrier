@@ -18,12 +18,12 @@
 - **Server** : AWS EC2
 - **DataBase** : MySQL, Redis
 - **Message Queue**: Kafka
-- **Library**: Spring-cloud, Lombok, Spring-security, JWT,  Modelmapper, validation
+- **Library**: Spring-cloud, Spring Kafka Lombok, Spring-security, JWT,  Modelmapper, validation
 - **Infra**: AWS S3, AWS codedeploy, Github Action, Docker
 
 #### 아키텍처
 
-![logiCarrier-architecture](https://github.com/boham97/LogiCarrier/assets/54574931/8bd47836-e4c8-4da9-8719-d71a8d661a85)
+![logiCarrier-architecture.jpg](C:\Users\bosung\Downloads\logiCarrier-architecture.jpg)
 
 #### ERD
 
