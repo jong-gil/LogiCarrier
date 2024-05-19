@@ -1,22 +1,62 @@
 version: '1.0'
 
 services:
-  logicarrier-db:
-      container_name: logicarrier-db
-      image: mysql:latest
-      environment:
-        - MYSQL_ROOT_PASSWORD=root
-      command: ['--character-set-server=utf8mb4',
-                '--collation-server=utf8mb4_unicode_ci',
-                '--init-file=/docker-entrypoint-initdb.d/init.sql']
-      volumes:
-        - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      ports:
-        - 3306:3306
-      restart: unless-stopped
-      networks:
-        my-network:
-          ipv4_address: 172.35.0.10
+  login-db:
+    container_name: login-db
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    command: ['--character-set-server=utf8mb4',
+              '--collation-server=utf8mb4_unicode_ci',
+              '--init-file=/docker-entrypoint-initdb.d/init.sql']
+    ports:
+      - 3306:3306
+    restart: unless-stopped
+    networks:
+      my-network:
+        ipv4_address: 172.35.0.10
+      
+  order-db:
+    container_name: order-db
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    command: ['--character-set-server=utf8mb4',
+              '--collation-server=utf8mb4_unicode_ci']
+    ports:
+      - 3307:3307
+    restart: unless-stopped
+    networks:
+      my-network:
+        ipv4_address: 172.35.0.11
+
+  robot-db:
+    container_name: robot-db
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    command: ['--character-set-server=utf8mb4',
+              '--collation-server=utf8mb4_unicode_ci']
+    ports:
+      - 3308:3308
+    restart: unless-stopped
+    networks:
+      my-network:
+        ipv4_address: 172.35.0.12
+
+  worker-db:
+    container_name: worker-db
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    command: ['--character-set-server=utf8mb4',
+              '--collation-server=utf8mb4_unicode_ci']
+    ports:
+      - 3309:3309
+    restart: unless-stopped
+    networks:
+      my-network:
+        ipv4_address: 172.35.0.13
 
   discovery-service:
     container_name: discovery-service
@@ -45,9 +85,9 @@ services:
     image: logicarrier/login-service:1.0.0
     environment:
       eureka_client_serviceUrl_defaultZone: http://discovery-service:8761/eureka/
-      spring_datasource_url: jdbc:mysql://logicarrier-db:3306/logiCarrier
+      spring_datasource_url: jdbc:mysql://login-db:3306/logiCarrier
     depends_on:
-      - logicarrier-db
+      - login-db
       - zoo1
       - kafka1
       - redis
@@ -61,12 +101,12 @@ services:
     image: logicarrier/worker-service:1.0.0
     environment:
       eureka_client_serviceUrl_defaultZone: http://discovery-service:8761/eureka/
-      spring_datasource_url: jdbc:mysql://logicarrier-db:3306/picker
+      spring_datasource_url: jdbc:mysql://worker-db:3309/picker
       spring_redis_host: redis
       spring_kafka_host: kafka1
       spring_kafka_port: 19092
     depends_on:
-      - logicarrier-db
+      - worker-db
       - zoo1
       - kafka1
       - redis
@@ -80,12 +120,12 @@ services:
     image: logicarrier/order-service:1.0.0
     environment:
       eureka_client_serviceUrl_defaultZone: http://discovery-service:8761/eureka/
-      spring_datasource_url: jdbc:mysql://logicarrier-db:3306/delivery
+      spring_datasource_url: jdbc:mysql://order-db:3308/delivery
       spring_redis_host: redis
       spring_kafka_host: kafka1
       spring_kafka_port: 19092
     depends_on:
-      - logicarrier-db
+      - order-db
       - zoo1
       - kafka1
       - redis
@@ -99,12 +139,12 @@ services:
     image: logicarrier/robot-service:1.0.0
     environment:
       eureka_client_serviceUrl_defaultZone: http://discovery-service:8761/eureka/
-      spring_datasource_url: jdbc:mysql://logicarrier-db:3306/robot
+      spring_datasource_url: jdbc:mysql://robot-db:3308/robot
       spring_redis_host: redis
       spring_kafka_host: kafka1
       spring_kafka_port: 19092
     depends_on:
-      - logicarrier-db
+      - robot-db
       - zoo1
       - kafka1
       - redis
@@ -161,9 +201,6 @@ services:
     container_name: redis
     ports:
       - 6379:6379
-    volumes:
-      - ./redis/data:/data
-      - ./redis/conf/redis.conf:/usr/local/conf/redis.conf
     labels:
       - "name=redis"
       - "mode=standalone"
@@ -180,5 +217,5 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.35.0.0/16
+        - subnet: 172.35.0.0/20
           gateway: 172.35.0.1
